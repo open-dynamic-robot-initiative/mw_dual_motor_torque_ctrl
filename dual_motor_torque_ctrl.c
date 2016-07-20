@@ -692,6 +692,7 @@ interrupt void motor1_ISR(void)
 				// Reset the Speed execution counter.
 				stCntSpeed[HAL_MTR1] = 0;
 
+				/*
 				// Pass the configuration to SpinTAC Velocity Move
 				STVELMOVE_setCurveType(st_obj[HAL_MTR1].velMoveHandle,
 						gMotorVars[HAL_MTR1].SpinTAC.VelMoveCurveType);
@@ -718,6 +719,11 @@ interrupt void motor1_ISR(void)
 				gIdq_ref_pu[HAL_MTR1].value[1] = ST_runVelCtl(
 						stHandle[HAL_MTR1],
 						STPOSCONV_getVelocity(st_obj[HAL_MTR1].posConvHandle));
+				*/
+				gIdq_ref_pu[HAL_MTR1].value[1] = _IQmpy(
+				        gMotorVars[HAL_MTR1].IqRef_A,
+				        _IQ(1.0/USER_IQ_FULL_SCALE_CURRENT_A));
+
 			}
 			else
 			{
@@ -1523,7 +1529,35 @@ _iq ST_runVelCtl(ST_Handle handle, _iq speedFeedback)
 	return iqReference;
 }
 
+
+// TODO: this does not fit directly to this lab
+void updateIqRef(CTRL_Handle handle, const uint_least8_t mtrNum)
+{
+    /*
+    _iq iq_ref = _IQmpy(gMotorVars[mtrNum].IqRef_A,
+            _IQ(1.0/USER_IQ_FULL_SCALE_CURRENT_A));
+
+    // set the speed reference so that the forced angle rotates in the correct
+    // direction for startup
+    if(_IQabs(gMotorVars[mtrNum].Speed_krpm) < _IQ(0.01))
+    {
+        if(iq_ref < _IQ(0.0))
+        {
+            CTRL_setSpd_ref_krpm(handle,_IQ(-0.01));
+        }
+        else if(iq_ref > _IQ(0.0))
+        {
+            CTRL_setSpd_ref_krpm(handle,_IQ(0.01));
+        }
+    }
+
+    // Set the Iq reference that use to come out of the PI speed control
+    CTRL_setIq_ref_pu(handle, iq_ref);
+    */
+
+    return;
+} // end of updateIqRef() function
+
+
 //@} //defgroup
 // end of file
-
-

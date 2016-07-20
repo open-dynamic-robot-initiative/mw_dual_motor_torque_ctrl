@@ -345,7 +345,7 @@ void CTRL_calcMax_Ls_qFmt(CTRL_Handle handle, uint_least8_t *p_qFmt);
 
 //! \brief     Updates Iq reference and also sets the right sign to the speed reference for correct force angle
 //!
-void updateIqRef(CTRL_Handle handle);
+void updateIqRef(CTRL_Handle handle, const uint_least8_t mtrNum);
 
 
 //! \brief     Updates Kp and Ki gains in the controller object
