@@ -609,15 +609,7 @@ void main(void)
 //! \brief     The main ISR that implements the motor control.
 interrupt void motor1_ISR(void)
 {
-	// Declaration of local variables
-	static _iq angle_pu = _IQ(0.0);
-	_iq speed_pu = _IQ(0.0);
-	_iq oneOverDcBus;
-	MATH_vec2 Iab_pu;
-	MATH_vec2 Vab_pu;
-	MATH_vec2 phasor;
-
-	HAL_setGpioHigh(halHandle,GPIO_Number_12);
+    HAL_setGpioHigh(halHandle,GPIO_Number_12);
 
 	// toggle status LED
 	if(gLEDcnt[HAL_MTR1]++
@@ -627,257 +619,11 @@ interrupt void motor1_ISR(void)
 	    gLEDcnt[HAL_MTR1] = 0;
 	}
 
-
 	// acknowledge the ADC interrupt
 	HAL_acqAdcInt(halHandle,ADC_IntNumber_1);
 
-	// convert the ADC data
-	HAL_readAdcDataWithOffsets(halHandle,halHandleMtr[HAL_MTR1],&gAdcData[HAL_MTR1]);
-
-	// remove offsets
-	gAdcData[HAL_MTR1].I.value[0] = gAdcData[HAL_MTR1].I.value[0] - gOffsets_I_pu[HAL_MTR1].value[0];
-	gAdcData[HAL_MTR1].I.value[1] = gAdcData[HAL_MTR1].I.value[1] - gOffsets_I_pu[HAL_MTR1].value[1];
-	gAdcData[HAL_MTR1].I.value[2] = gAdcData[HAL_MTR1].I.value[2] - gOffsets_I_pu[HAL_MTR1].value[2];
-	gAdcData[HAL_MTR1].V.value[0] = gAdcData[HAL_MTR1].V.value[0] - gOffsets_V_pu[HAL_MTR1].value[0];
-	gAdcData[HAL_MTR1].V.value[1] = gAdcData[HAL_MTR1].V.value[1] - gOffsets_V_pu[HAL_MTR1].value[1];
-	gAdcData[HAL_MTR1].V.value[2] = gAdcData[HAL_MTR1].V.value[2] - gOffsets_V_pu[HAL_MTR1].value[2];
-
-	// run Clarke transform on current.  Three values are passed, two values
-	// are returned.
-	CLARKE_run(clarkeHandle_I[HAL_MTR1],&gAdcData[HAL_MTR1].I,&Iab_pu);
-
-	// compute the sine and cosine phasor values which are part of the
-	// Park transform calculations. Once these values are computed,
-	// they are copied into the PARK module, which then uses them to
-	// transform the voltages from Alpha/Beta to DQ reference frames.
-	phasor.value[0] = _IQcosPU(angle_pu);
-	phasor.value[1] = _IQsinPU(angle_pu);
-
-	// set the phasor in the Park transform
-	PARK_setPhasor(parkHandle[HAL_MTR1],&phasor);
-
-	// Run the Park module.  This converts the current vector from
-	// stationary frame values to synchronous frame values.
-	PARK_run(parkHandle[HAL_MTR1],&Iab_pu,&gIdq_pu[HAL_MTR1]);
-
-	// compute the electrical angle
-	ENC_calcElecAngle(encHandle[HAL_MTR1], HAL_getQepPosnCounts(halHandleMtr[HAL_MTR1]));
-
-	if(stCntSpeed[HAL_MTR1] >= gUserParams[HAL_MTR1].numCtrlTicksPerSpeedTick)
-	{
-		// Calculate the feedback speed
-		ST_runPosConv(
-				stHandle[HAL_MTR1],
-				encHandle[HAL_MTR1],
-				slipHandle[HAL_MTR1],
-				&gIdq_pu[HAL_MTR1],
-				gUserParams[HAL_MTR1].motor_type);
-	}
-
-	// run the appropriate controller
-	if(gMotorVars[HAL_MTR1].Flag_Run_Identify)
-	{
-		// Declaration of local variables.
-		_iq refValue;
-		_iq fbackValue;
-		_iq outMax_pu;
-
-		// check if the motor should be forced into encoder slignment
-		if(gMotorVars[HAL_MTR1].Flag_enableAlignment == false)
-		{
-			// when appropriate, run SpinTAC Velocity Control
-			// This mechanism provides the decimation for the speed loop.
-			if(stCntSpeed[HAL_MTR1] >= gUserParams[HAL_MTR1].numCtrlTicksPerSpeedTick)
-			{
-				// Reset the Speed execution counter.
-				stCntSpeed[HAL_MTR1] = 0;
-
-				/*
-				// Pass the configuration to SpinTAC Velocity Move
-				STVELMOVE_setCurveType(st_obj[HAL_MTR1].velMoveHandle,
-						gMotorVars[HAL_MTR1].SpinTAC.VelMoveCurveType);
-				STVELMOVE_setVelocityEnd(
-						st_obj[HAL_MTR1].velMoveHandle,
-						_IQmpy(gMotorVars[HAL_MTR1].SpeedRef_krpm,
-								gSpeed_krpm_to_pu_sf[HAL_MTR1]));
-				STVELMOVE_setAccelerationLimit(
-						st_obj[HAL_MTR1].velMoveHandle,
-						_IQmpy(gMotorVars[HAL_MTR1].MaxAccel_krpmps,
-								gSpeed_krpm_to_pu_sf[HAL_MTR1]));
-				STVELMOVE_setJerkLimit(
-						st_obj[HAL_MTR1].velMoveHandle,
-						_IQ20mpy(gMotorVars[HAL_MTR1].MaxJrk_krpmps2,
-								_IQtoIQ20(gSpeed_krpm_to_pu_sf[HAL_MTR1])));
-				// The next instruction executes SpinTAC Velocity Move
-				// This is the speed profile generation
-				ST_runVelMove(stHandle[HAL_MTR1], NULL,
-						(bool *)&gMotorVars[HAL_MTR1].Flag_enableForceAngle);
-
-				// The next instruction executes SpinTAC Velocity Control and places
-				// its output in Idq_ref_pu.value[1], which is the input reference
-				// value for the q-axis current controller.
-				gIdq_ref_pu[HAL_MTR1].value[1] = ST_runVelCtl(
-						stHandle[HAL_MTR1],
-						STPOSCONV_getVelocity(st_obj[HAL_MTR1].posConvHandle));
-				*/
-				gIdq_ref_pu[HAL_MTR1].value[1] = _IQmpy(
-				        gMotorVars[HAL_MTR1].IqRef_A,
-				        _IQ(1.0/USER_IQ_FULL_SCALE_CURRENT_A));
-
-			}
-			else
-			{
-				// increment counter
-				stCntSpeed[HAL_MTR1]++;
-			}
-
-			// generate the motor electrical angle
-			if(gUserParams[HAL_MTR1].motor_type == MOTOR_Type_Induction)
-			{
-				// update the electrical angle for the SLIP module
-				SLIP_setElectricalAngle(slipHandle[HAL_MTR1],
-						ENC_getElecAngle(encHandle[HAL_MTR1]));
-				// compute the amount of slip
-				SLIP_run(slipHandle[HAL_MTR1]);
-				// set magnetic angle
-				angle_pu = SLIP_getMagneticAngle(slipHandle[HAL_MTR1]);
-			}
-			else
-			{
-				angle_pu = ENC_getElecAngle(encHandle[HAL_MTR1]);
-			}
-
-			speed_pu = STPOSCONV_getVelocity(st_obj[HAL_MTR1].posConvHandle);
-		}
-		else
-		{  // the alignment procedure is in effect
-
-			// force motor angle and speed to 0
-			angle_pu = _IQ(0.0);
-			speed_pu = _IQ(0.0);
-
-			// set D-axis current to Rs estimation current
-			gIdq_ref_pu[HAL_MTR1].value[0] = _IQ(
-					USER_MOTOR_RES_EST_CURRENT / USER_IQ_FULL_SCALE_CURRENT_A);
-			// set Q-axis current to 0
-			gIdq_ref_pu[HAL_MTR1].value[1] = _IQ(0.0);
-
-			// save encoder reading when forcing motor into alignment
-			if(gUserParams[HAL_MTR1].motor_type == MOTOR_Type_Pm)
-			{
-				ENC_setZeroOffset(encHandle[HAL_MTR1],
-						(uint32_t)(HAL_getQepPosnMaximum(halHandleMtr[HAL_MTR1])
-								- HAL_getQepPosnCounts(halHandleMtr[HAL_MTR1])));
-			}
-
-			// if alignment counter exceeds threshold, exit alignment
-			if(gAlignCount[HAL_MTR1]++
-					>= gUserParams[HAL_MTR1].ctrlWaitTime[CTRL_State_OffLine])
-			{
-				gMotorVars[HAL_MTR1].Flag_enableAlignment = false;
-				gAlignCount[HAL_MTR1] = 0;
-				gIdq_ref_pu[HAL_MTR1].value[0] = _IQ(0.0);
-			}
-		}
-
-		// Get the reference value for the d-axis current controller.
-		refValue = gIdq_ref_pu[HAL_MTR1].value[0];
-
-		// Get the actual value of Id
-		fbackValue = gIdq_pu[HAL_MTR1].value[0];
-
-		// The next instruction executes the PI current controller for the
-		// d axis and places its output in Vdq_pu.value[0], which is the
-		// control voltage along the d-axis (Vd)
-		PID_run(pidHandle[HAL_MTR1][1],
-				refValue,
-				fbackValue,
-				&(gVdq_out_pu[HAL_MTR1].value[0]));
-
-		// get the Iq reference value
-		refValue = gIdq_ref_pu[HAL_MTR1].value[1];
-
-		// get the actual value of Iq
-		fbackValue = gIdq_pu[HAL_MTR1].value[1];
-
-		// The voltage limits on the output of the q-axis current controller
-		// are dynamic, and are dependent on the output voltage from the d-axis
-		// current controller.  In other words, the d-axis current controller
-		// gets first dibs on the available voltage, and the q-axis current
-		// controller gets what's left over.  That is why the d-axis current
-		// controller executes first. The next instruction calculates the
-		// maximum limits for this voltage as:
-		// Vq_min_max = +/- sqrt(Vbus^2 - Vd^2)
-		outMax_pu = _IQsqrt(_IQ(USER_MAX_VS_MAG_PU * USER_MAX_VS_MAG_PU)
-				- _IQmpy(gVdq_out_pu[HAL_MTR1].value[0],
-						gVdq_out_pu[HAL_MTR1].value[0]));
-
-		// Set the limits to +/- outMax_pu
-		PID_setMinMax(pidHandle[HAL_MTR1][2], -outMax_pu,outMax_pu);
-
-		// The next instruction executes the PI current controller for the
-		// q axis and places its output in Vdq_pu.value[1], which is the
-		// control voltage vector along the q-axis (Vq)
-		PID_run(pidHandle[HAL_MTR1][2],
-				refValue,
-				fbackValue,
-				&(gVdq_out_pu[HAL_MTR1].value[1]));
-
-		// The voltage vector is now calculated and ready to be applied to the
-		// motor in the form of three PWM signals.  However, even though the
-		// voltages may be supplied to the PWM module now, they won't be
-		// applied to the motor until the next PWM cycle. By this point, the
-		// motor will have moved away from the angle that the voltage vector
-		// was calculated for, by an amount which is proportional to the
-		// sampling frequency and the speed of the motor.  For steady-state
-		// speeds, we can calculate this angle delay and compensate for it.
-		ANGLE_COMP_run(angleCompHandle[HAL_MTR1], speed_pu,angle_pu);
-		angle_pu = ANGLE_COMP_getAngleComp_pu(angleCompHandle[HAL_MTR1]);
-
-		// compute the sine and cosine phasor values which are part of the inverse
-		// Park transform calculations. Once these values are computed,
-		// they are copied into the IPARK module, which then uses them to
-		// transform the voltages from DQ to Alpha/Beta reference frames.
-		phasor.value[0] = _IQcosPU(angle_pu);
-		phasor.value[1] = _IQsinPU(angle_pu);
-
-		// set the phasor in the inverse Park transform
-		IPARK_setPhasor(iparkHandle[HAL_MTR1], &phasor);
-
-		// Run the inverse Park module.  This converts the voltage vector from
-		// synchronous frame values to stationary frame values.
-		IPARK_run(iparkHandle[HAL_MTR1], &gVdq_out_pu[HAL_MTR1], &Vab_pu);
-
-		// These 3 statements compensate for variations in the DC bus by adjusting the
-		// PWM duty cycle. The goal is to achieve the same volt-second product
-		// regardless of the DC bus value.  To do this, we must divide the desired voltage
-		// values by the DC bus value.  Or...it is easier to multiply by 1/(DC bus value).
-		oneOverDcBus = _IQdiv(_IQ(1.0), gAdcData[HAL_MTR1].dcBus);
-		Vab_pu.value[0] = _IQmpy(Vab_pu.value[0], oneOverDcBus);
-		Vab_pu.value[1] = _IQmpy(Vab_pu.value[1], oneOverDcBus);
-
-		// Now run the space vector generator (SVGEN) module.
-		// There is no need to do an inverse CLARKE transform, as this is
-		// handled in the SVGEN_run function.
-		SVGEN_run(svgenHandle[HAL_MTR1], &Vab_pu, &(gPwmData[HAL_MTR1].Tabc));
-	}
-	else if(gMotorVars[HAL_MTR1].Flag_enableOffsetcalc == true)
-	{
-		runOffsetsCalculation(HAL_MTR1);
-	}
-	else  // gMotorVars.Flag_Run_Identify = 0
-	{
-		// disable the PWM
-		HAL_disablePwm(halHandleMtr[HAL_MTR1]);
-
-		// Set the PWMs to 50% duty cycle
-		gPwmData[HAL_MTR1].Tabc.value[0] = _IQ(0.0);
-		gPwmData[HAL_MTR1].Tabc.value[1] = _IQ(0.0);
-		gPwmData[HAL_MTR1].Tabc.value[2] = _IQ(0.0);
-	}
-
-	// write to the PWM compare registers, and then we are done!
-	HAL_writePwmData(halHandleMtr[HAL_MTR1],&gPwmData[HAL_MTR1]);
+	generic_motor_ISR(HAL_MTR1,
+	        _IQ(USER_MOTOR_RES_EST_CURRENT), _IQ(USER_MAX_VS_MAG_PU));
 
 	HAL_setGpioLow(halHandle,GPIO_Number_12);
 
@@ -885,16 +631,11 @@ interrupt void motor1_ISR(void)
 } // end of motor1_ISR() function
 
 
+
+
+
 interrupt void motor2_ISR(void)
 {
-	// Declaration of local variables
-	static _iq angle_pu = _IQ(0.0);
-	_iq speed_pu = _IQ(0.0);
-	_iq oneOverDcBus;
-	MATH_vec2 Iab_pu;
-	MATH_vec2 Vab_pu;
-	MATH_vec2 phasor;
-
 	HAL_setGpioHigh(halHandle,GPIO_Number_13);
 
 	// toggle status LED
@@ -905,25 +646,47 @@ interrupt void motor2_ISR(void)
 	    gLEDcnt[HAL_MTR2] = 0;
 	}
 
-
 	// acknowledge the ADC interrupt
 	HAL_acqAdcInt(halHandle,ADC_IntNumber_2);
 
+	generic_motor_ISR(HAL_MTR2,
+	        _IQ(USER_MOTOR_RES_EST_CURRENT_2), _IQ(USER_MAX_VS_MAG_PU_2));
+
+
+	HAL_setGpioLow(halHandle,GPIO_Number_13);
+
+	return;
+} // end of motor2_ISR() function
+
+
+void generic_motor_ISR(
+        const HAL_MtrSelect_e mtrNum,
+        const _iq user_motor_res_est_current,
+        const _iq user_max_vs_mag_pu)
+{
+    // Declaration of local variables
+	static _iq angle_pu = _IQ(0.0);
+	_iq speed_pu = _IQ(0.0);
+	_iq oneOverDcBus;
+	MATH_vec2 Iab_pu;
+	MATH_vec2 Vab_pu;
+	MATH_vec2 phasor;
+
+
 	// convert the ADC data
-	HAL_readAdcDataWithOffsets(
-			halHandle, halHandleMtr[HAL_MTR2], &gAdcData[HAL_MTR2]);
+	HAL_readAdcDataWithOffsets(halHandle,halHandleMtr[mtrNum],&gAdcData[mtrNum]);
 
 	// remove offsets
-	gAdcData[HAL_MTR2].I.value[0] = gAdcData[HAL_MTR2].I.value[0] - gOffsets_I_pu[HAL_MTR2].value[0];
-	gAdcData[HAL_MTR2].I.value[1] = gAdcData[HAL_MTR2].I.value[1] - gOffsets_I_pu[HAL_MTR2].value[1];
-	gAdcData[HAL_MTR2].I.value[2] = gAdcData[HAL_MTR2].I.value[2] - gOffsets_I_pu[HAL_MTR2].value[2];
-	gAdcData[HAL_MTR2].V.value[0] = gAdcData[HAL_MTR2].V.value[0] - gOffsets_V_pu[HAL_MTR2].value[0];
-	gAdcData[HAL_MTR2].V.value[1] = gAdcData[HAL_MTR2].V.value[1] - gOffsets_V_pu[HAL_MTR2].value[1];
-	gAdcData[HAL_MTR2].V.value[2] = gAdcData[HAL_MTR2].V.value[2] - gOffsets_V_pu[HAL_MTR2].value[2];
+	gAdcData[mtrNum].I.value[0] = gAdcData[mtrNum].I.value[0] - gOffsets_I_pu[mtrNum].value[0];
+	gAdcData[mtrNum].I.value[1] = gAdcData[mtrNum].I.value[1] - gOffsets_I_pu[mtrNum].value[1];
+	gAdcData[mtrNum].I.value[2] = gAdcData[mtrNum].I.value[2] - gOffsets_I_pu[mtrNum].value[2];
+	gAdcData[mtrNum].V.value[0] = gAdcData[mtrNum].V.value[0] - gOffsets_V_pu[mtrNum].value[0];
+	gAdcData[mtrNum].V.value[1] = gAdcData[mtrNum].V.value[1] - gOffsets_V_pu[mtrNum].value[1];
+	gAdcData[mtrNum].V.value[2] = gAdcData[mtrNum].V.value[2] - gOffsets_V_pu[mtrNum].value[2];
 
 	// run Clarke transform on current.  Three values are passed, two values
 	// are returned.
-	CLARKE_run(clarkeHandle_I[HAL_MTR2], &gAdcData[HAL_MTR2].I,&Iab_pu);
+	CLARKE_run(clarkeHandle_I[mtrNum],&gAdcData[mtrNum].I,&Iab_pu);
 
 	// compute the sine and cosine phasor values which are part of the
 	// Park transform calculations. Once these values are computed,
@@ -933,27 +696,28 @@ interrupt void motor2_ISR(void)
 	phasor.value[1] = _IQsinPU(angle_pu);
 
 	// set the phasor in the Park transform
-	PARK_setPhasor(parkHandle[HAL_MTR2], &phasor);
+	PARK_setPhasor(parkHandle[mtrNum],&phasor);
 
 	// Run the Park module.  This converts the current vector from
 	// stationary frame values to synchronous frame values.
-	PARK_run(parkHandle[HAL_MTR2], &Iab_pu, &gIdq_pu[HAL_MTR2]);
+	PARK_run(parkHandle[mtrNum],&Iab_pu,&gIdq_pu[mtrNum]);
 
 	// compute the electrical angle
-	ENC_calcElecAngle(encHandle[HAL_MTR2], HAL_getQepPosnCounts(halHandleMtr[HAL_MTR2]));
+	ENC_calcElecAngle(encHandle[mtrNum], HAL_getQepPosnCounts(halHandleMtr[mtrNum]));
 
-	if(stCntSpeed[HAL_MTR2] >= gUserParams[HAL_MTR2].numCtrlTicksPerSpeedTick)
+	if(stCntSpeed[mtrNum] >= gUserParams[mtrNum].numCtrlTicksPerSpeedTick)
 	{
 		// Calculate the feedback speed
-		ST_runPosConv(stHandle[HAL_MTR2],
-				encHandle[HAL_MTR2],
-				slipHandle[HAL_MTR2],
-				&gIdq_pu[HAL_MTR2],
-				gUserParams[HAL_MTR2].motor_type);
+		ST_runPosConv(
+				stHandle[mtrNum],
+				encHandle[mtrNum],
+				slipHandle[mtrNum],
+				&gIdq_pu[mtrNum],
+				gUserParams[mtrNum].motor_type);
 	}
 
 	// run the appropriate controller
-	if(gMotorVars[HAL_MTR2].Flag_Run_Identify)
+	if(gMotorVars[mtrNum].Flag_Run_Identify)
 	{
 		// Declaration of local variables.
 		_iq refValue;
@@ -961,66 +725,71 @@ interrupt void motor2_ISR(void)
 		_iq outMax_pu;
 
 		// check if the motor should be forced into encoder slignment
-		if(gMotorVars[HAL_MTR2].Flag_enableAlignment == false)
+		if(gMotorVars[mtrNum].Flag_enableAlignment == false)
 		{
 			// when appropriate, run SpinTAC Velocity Control
 			// This mechanism provides the decimation for the speed loop.
-			if(stCntSpeed[HAL_MTR2] >= gUserParams[HAL_MTR2].numCtrlTicksPerSpeedTick)
+			if(stCntSpeed[mtrNum] >= gUserParams[mtrNum].numCtrlTicksPerSpeedTick)
 			{
 				// Reset the Speed execution counter.
-				stCntSpeed[HAL_MTR2] = 0;
+				stCntSpeed[mtrNum] = 0;
 
+				/*
 				// Pass the configuration to SpinTAC Velocity Move
-				STVELMOVE_setCurveType(
-						st_obj[HAL_MTR2].velMoveHandle,
-						gMotorVars[HAL_MTR2].SpinTAC.VelMoveCurveType);
+				STVELMOVE_setCurveType(st_obj[mtrNum].velMoveHandle,
+						gMotorVars[mtrNum].SpinTAC.VelMoveCurveType);
 				STVELMOVE_setVelocityEnd(
-						st_obj[HAL_MTR2].velMoveHandle,
-						_IQmpy(gMotorVars[HAL_MTR2].SpeedRef_krpm,
-								gSpeed_krpm_to_pu_sf[HAL_MTR2]));
+						st_obj[mtrNum].velMoveHandle,
+						_IQmpy(gMotorVars[mtrNum].SpeedRef_krpm,
+								gSpeed_krpm_to_pu_sf[mtrNum]));
 				STVELMOVE_setAccelerationLimit(
-						st_obj[HAL_MTR2].velMoveHandle,
-						_IQmpy(gMotorVars[HAL_MTR2].MaxAccel_krpmps,
-								gSpeed_krpm_to_pu_sf[HAL_MTR2]));
+						st_obj[mtrNum].velMoveHandle,
+						_IQmpy(gMotorVars[mtrNum].MaxAccel_krpmps,
+								gSpeed_krpm_to_pu_sf[mtrNum]));
 				STVELMOVE_setJerkLimit(
-						st_obj[HAL_MTR2].velMoveHandle,
-						_IQ20mpy(gMotorVars[HAL_MTR2].MaxJrk_krpmps2,
-								_IQtoIQ20(gSpeed_krpm_to_pu_sf[HAL_MTR2])));
+						st_obj[mtrNum].velMoveHandle,
+						_IQ20mpy(gMotorVars[mtrNum].MaxJrk_krpmps2,
+								_IQtoIQ20(gSpeed_krpm_to_pu_sf[mtrNum])));
 				// The next instruction executes SpinTAC Velocity Move
 				// This is the speed profile generation
-				ST_runVelMove(stHandle[HAL_MTR2], NULL,
-						(bool *)&gMotorVars[HAL_MTR2].Flag_enableForceAngle);
+				ST_runVelMove(stHandle[mtrNum], NULL,
+						(bool *)&gMotorVars[mtrNum].Flag_enableForceAngle);
 
 				// The next instruction executes SpinTAC Velocity Control and places
 				// its output in Idq_ref_pu.value[1], which is the input reference
 				// value for the q-axis current controller.
-				gIdq_ref_pu[HAL_MTR2].value[1] = ST_runVelCtl(
-						stHandle[HAL_MTR2],
-						STPOSCONV_getVelocity(st_obj[HAL_MTR2].posConvHandle));
+				gIdq_ref_pu[mtrNum].value[1] = ST_runVelCtl(
+						stHandle[mtrNum],
+						STPOSCONV_getVelocity(st_obj[mtrNum].posConvHandle));
+				*/
+				gIdq_ref_pu[mtrNum].value[1] = _IQmpy(
+				        gMotorVars[mtrNum].IqRef_A,
+				        _IQ(1.0/USER_IQ_FULL_SCALE_CURRENT_A));
+
 			}
 			else
 			{
 				// increment counter
-				stCntSpeed[HAL_MTR2]++;
+				stCntSpeed[mtrNum]++;
 			}
 
 			// generate the motor electrical angle
-			if(gUserParams[HAL_MTR2].motor_type == MOTOR_Type_Induction)
+			if(gUserParams[mtrNum].motor_type == MOTOR_Type_Induction)
 			{
 				// update the electrical angle for the SLIP module
-				SLIP_setElectricalAngle(slipHandle[HAL_MTR2],
-						ENC_getElecAngle(encHandle[HAL_MTR2]));
+				SLIP_setElectricalAngle(slipHandle[mtrNum],
+						ENC_getElecAngle(encHandle[mtrNum]));
 				// compute the amount of slip
-				SLIP_run(slipHandle[HAL_MTR2]);
+				SLIP_run(slipHandle[mtrNum]);
 				// set magnetic angle
-				angle_pu = SLIP_getMagneticAngle(slipHandle[HAL_MTR2]);
+				angle_pu = SLIP_getMagneticAngle(slipHandle[mtrNum]);
 			}
 			else
 			{
-				angle_pu = ENC_getElecAngle(encHandle[HAL_MTR2]);
+				angle_pu = ENC_getElecAngle(encHandle[mtrNum]);
 			}
 
-			speed_pu = STPOSCONV_getVelocity(st_obj[HAL_MTR2].posConvHandle);
+			speed_pu = STPOSCONV_getVelocity(st_obj[mtrNum].posConvHandle);
 		}
 		else
 		{  // the alignment procedure is in effect
@@ -1030,48 +799,48 @@ interrupt void motor2_ISR(void)
 			speed_pu = _IQ(0.0);
 
 			// set D-axis current to Rs estimation current
-			gIdq_ref_pu[HAL_MTR2].value[0] = _IQ(
-					USER_MOTOR_RES_EST_CURRENT_2 / USER_IQ_FULL_SCALE_CURRENT_A_2);
+			gIdq_ref_pu[mtrNum].value[0] = _IQmpy(user_motor_res_est_current,
+			        _IQ(1.0 / USER_IQ_FULL_SCALE_CURRENT_A));
 			// set Q-axis current to 0
-			gIdq_ref_pu[HAL_MTR2].value[1] = _IQ(0.0);
+			gIdq_ref_pu[mtrNum].value[1] = _IQ(0.0);
 
 			// save encoder reading when forcing motor into alignment
-			if(gUserParams[HAL_MTR2].motor_type == MOTOR_Type_Pm)
+			if(gUserParams[mtrNum].motor_type == MOTOR_Type_Pm)
 			{
-				ENC_setZeroOffset(encHandle[HAL_MTR2],
-						(uint32_t)(HAL_getQepPosnMaximum(halHandleMtr[HAL_MTR2])
-								- HAL_getQepPosnCounts(halHandleMtr[HAL_MTR2])));
+				ENC_setZeroOffset(encHandle[mtrNum],
+						(uint32_t)(HAL_getQepPosnMaximum(halHandleMtr[mtrNum])
+								- HAL_getQepPosnCounts(halHandleMtr[mtrNum])));
 			}
 
 			// if alignment counter exceeds threshold, exit alignment
-			if(gAlignCount[HAL_MTR2]++
-					>= gUserParams[HAL_MTR2].ctrlWaitTime[CTRL_State_OffLine])
+			if(gAlignCount[mtrNum]++
+					>= gUserParams[mtrNum].ctrlWaitTime[CTRL_State_OffLine])
 			{
-				gMotorVars[HAL_MTR2].Flag_enableAlignment = false;
-				gAlignCount[HAL_MTR2] = 0;
-				gIdq_ref_pu[HAL_MTR2].value[0] = _IQ(0.0);
+				gMotorVars[mtrNum].Flag_enableAlignment = false;
+				gAlignCount[mtrNum] = 0;
+				gIdq_ref_pu[mtrNum].value[0] = _IQ(0.0);
 			}
 		}
 
 		// Get the reference value for the d-axis current controller.
-		refValue = gIdq_ref_pu[HAL_MTR2].value[0];
+		refValue = gIdq_ref_pu[mtrNum].value[0];
 
 		// Get the actual value of Id
-		fbackValue = gIdq_pu[HAL_MTR2].value[0];
+		fbackValue = gIdq_pu[mtrNum].value[0];
 
 		// The next instruction executes the PI current controller for the
 		// d axis and places its output in Vdq_pu.value[0], which is the
 		// control voltage along the d-axis (Vd)
-		PID_run(pidHandle[HAL_MTR2][1],
+		PID_run(pidHandle[mtrNum][1],
 				refValue,
 				fbackValue,
-				&(gVdq_out_pu[HAL_MTR2].value[0]));
+				&(gVdq_out_pu[mtrNum].value[0]));
 
 		// get the Iq reference value
-		refValue = gIdq_ref_pu[HAL_MTR2].value[1];
+		refValue = gIdq_ref_pu[mtrNum].value[1];
 
 		// get the actual value of Iq
-		fbackValue = gIdq_pu[HAL_MTR2].value[1];
+		fbackValue = gIdq_pu[mtrNum].value[1];
 
 		// The voltage limits on the output of the q-axis current controller
 		// are dynamic, and are dependent on the output voltage from the d-axis
@@ -1081,20 +850,20 @@ interrupt void motor2_ISR(void)
 		// controller executes first. The next instruction calculates the
 		// maximum limits for this voltage as:
 		// Vq_min_max = +/- sqrt(Vbus^2 - Vd^2)
-		outMax_pu = _IQsqrt(_IQ(USER_MAX_VS_MAG_PU_2 * USER_MAX_VS_MAG_PU_2)
-				- _IQmpy(gVdq_out_pu[HAL_MTR2].value[0],
-						gVdq_out_pu[HAL_MTR2].value[0]));
+		outMax_pu = _IQsqrt(_IQmpy(user_max_vs_mag_pu, user_max_vs_mag_pu)
+				- _IQmpy(gVdq_out_pu[mtrNum].value[0],
+						gVdq_out_pu[mtrNum].value[0]));
 
 		// Set the limits to +/- outMax_pu
-		PID_setMinMax(pidHandle[HAL_MTR2][2], -outMax_pu,outMax_pu);
+		PID_setMinMax(pidHandle[mtrNum][2], -outMax_pu,outMax_pu);
 
 		// The next instruction executes the PI current controller for the
 		// q axis and places its output in Vdq_pu.value[1], which is the
 		// control voltage vector along the q-axis (Vq)
-		PID_run(pidHandle[HAL_MTR2][2],
+		PID_run(pidHandle[mtrNum][2],
 				refValue,
 				fbackValue,
-				&(gVdq_out_pu[HAL_MTR2].value[1]));
+				&(gVdq_out_pu[mtrNum].value[1]));
 
 		// The voltage vector is now calculated and ready to be applied to the
 		// motor in the form of three PWM signals.  However, even though the
@@ -1104,9 +873,8 @@ interrupt void motor2_ISR(void)
 		// was calculated for, by an amount which is proportional to the
 		// sampling frequency and the speed of the motor.  For steady-state
 		// speeds, we can calculate this angle delay and compensate for it.
-		ANGLE_COMP_run(angleCompHandle[HAL_MTR2], speed_pu,angle_pu);
-		angle_pu = ANGLE_COMP_getAngleComp_pu(angleCompHandle[HAL_MTR2]);
-
+		ANGLE_COMP_run(angleCompHandle[mtrNum], speed_pu,angle_pu);
+		angle_pu = ANGLE_COMP_getAngleComp_pu(angleCompHandle[mtrNum]);
 
 		// compute the sine and cosine phasor values which are part of the inverse
 		// Park transform calculations. Once these values are computed,
@@ -1116,47 +884,45 @@ interrupt void motor2_ISR(void)
 		phasor.value[1] = _IQsinPU(angle_pu);
 
 		// set the phasor in the inverse Park transform
-		IPARK_setPhasor(iparkHandle[HAL_MTR2], &phasor);
+		IPARK_setPhasor(iparkHandle[mtrNum], &phasor);
 
 		// Run the inverse Park module.  This converts the voltage vector from
 		// synchronous frame values to stationary frame values.
-		IPARK_run(iparkHandle[HAL_MTR2], &gVdq_out_pu[HAL_MTR2], &Vab_pu);
+		IPARK_run(iparkHandle[mtrNum], &gVdq_out_pu[mtrNum], &Vab_pu);
 
 		// These 3 statements compensate for variations in the DC bus by adjusting the
 		// PWM duty cycle. The goal is to achieve the same volt-second product
 		// regardless of the DC bus value.  To do this, we must divide the desired voltage
 		// values by the DC bus value.  Or...it is easier to multiply by 1/(DC bus value).
-		oneOverDcBus = _IQdiv(_IQ(1.0), gAdcData[HAL_MTR2].dcBus);
+		oneOverDcBus = _IQdiv(_IQ(1.0), gAdcData[mtrNum].dcBus);
 		Vab_pu.value[0] = _IQmpy(Vab_pu.value[0], oneOverDcBus);
 		Vab_pu.value[1] = _IQmpy(Vab_pu.value[1], oneOverDcBus);
 
 		// Now run the space vector generator (SVGEN) module.
 		// There is no need to do an inverse CLARKE transform, as this is
 		// handled in the SVGEN_run function.
-		SVGEN_run(svgenHandle[HAL_MTR2], &Vab_pu, &(gPwmData[HAL_MTR2].Tabc));
+		SVGEN_run(svgenHandle[mtrNum], &Vab_pu, &(gPwmData[mtrNum].Tabc));
 	}
-	else if(gMotorVars[HAL_MTR2].Flag_enableOffsetcalc == true)
+	else if(gMotorVars[mtrNum].Flag_enableOffsetcalc == true)
 	{
-		runOffsetsCalculation(HAL_MTR2);
+		runOffsetsCalculation(mtrNum);
 	}
 	else  // gMotorVars.Flag_Run_Identify = 0
 	{
 		// disable the PWM
-		HAL_disablePwm(halHandleMtr[HAL_MTR2]);
+		HAL_disablePwm(halHandleMtr[mtrNum]);
 
 		// Set the PWMs to 50% duty cycle
-		gPwmData[HAL_MTR2].Tabc.value[0] = _IQ(0.0);
-		gPwmData[HAL_MTR2].Tabc.value[1] = _IQ(0.0);
-		gPwmData[HAL_MTR2].Tabc.value[2] = _IQ(0.0);
+		gPwmData[mtrNum].Tabc.value[0] = _IQ(0.0);
+		gPwmData[mtrNum].Tabc.value[1] = _IQ(0.0);
+		gPwmData[mtrNum].Tabc.value[2] = _IQ(0.0);
 	}
 
 	// write to the PWM compare registers, and then we are done!
-	HAL_writePwmData(halHandleMtr[HAL_MTR2],&gPwmData[HAL_MTR2]);
+	HAL_writePwmData(halHandleMtr[mtrNum],&gPwmData[mtrNum]);
+}
 
-	HAL_setGpioLow(halHandle,GPIO_Number_13);
 
-	return;
-} // end of motor2_ISR() function
 
 
 void pidSetup(HAL_MtrSelect_e mtrNum)

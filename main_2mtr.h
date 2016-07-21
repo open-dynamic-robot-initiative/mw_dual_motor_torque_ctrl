@@ -405,6 +405,11 @@ _iq getAbsElecAngle(const _iq angle_pu);
 
 _iq getAbsMechAngle(_iq *pAngle_mech_poles, _iq *pAngle_z1_pu, const _iq angle_pu);
 
+void generic_motor_ISR(
+        const HAL_MtrSelect_e mtrNum,
+        const _iq user_motor_res_est_current,
+        const _iq user_max_vs_mag_pu);
+
 //@} //defgroup
 #endif // end of _MAIN_H_ definition
 
