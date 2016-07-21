@@ -50,6 +50,7 @@
 // system includes
 #include <math.h>
 #include "main_2mtr.h"
+#include "virtualspring.h"
 
 #ifdef FLASH
 #pragma CODE_SECTION(motor1_ISR, "ramfuncs");
@@ -146,6 +147,9 @@ uint32_t gAlignCount[2] = {0, 0};
 
 ST_Obj          st_obj[2];      //!< the SpinTAC objects
 ST_Handle       stHandle[2];    //!< the handles for the SpinTAC objects
+
+VIRTUALSPRING_Handle springHandle[2];
+VIRTUALSPRING_Obj spring[2];
 
 uint16_t gLEDcnt[2] = {0, 0};
 
@@ -398,6 +402,13 @@ void main(void)
 			// initialize the SpinTAC Components
 			stHandle[mtrNum] = ST_init(
 			        &st_obj[mtrNum], sizeof(st_obj[mtrNum]));
+
+			// init virtual spring handle
+			springHandle[mtrNum] = VIRTUALSPRING_init(
+			        &spring[mtrNum], sizeof(spring[mtrNum]));
+			VIRTUALSPRING_setup(springHandle[mtrNum],
+			        10, _IQ(2.0), st_obj[mtrNum].vel.conv.cfg.ROMax_mrev);
+
 		} // End of for loop
 	}
 
@@ -786,6 +797,27 @@ void generic_motor_ISR(
 						stHandle[mtrNum],
 						STPOSCONV_getVelocity(st_obj[mtrNum].posConvHandle));
 				*/
+
+				// If virtual spring mode is deactivated, reset IqRef to 0
+				if (VIRTUALSPRING_isJustDisabled(springHandle[mtrNum])) {
+				    gMotorVars[mtrNum].IqRef_A = 0;
+				}
+				// If virtual spring mode is activated, reset position offset
+				else if (VIRTUALSPRING_isJustEnabled(springHandle[mtrNum])) {
+				    VIRTUALSPRING_scheduleResetOffset(springHandle[mtrNum]);
+				}
+
+				// run virtual spring to update its deflection value
+				VIRTUALSPRING_run(springHandle[mtrNum],
+				        st_obj[mtrNum].vel.conv.Pos_mrev);
+
+				// If spring is enabled, set IqRef based on it
+				if (VIRTUALSPRING_isEnabled(springHandle[mtrNum])) {
+				    gMotorVars[mtrNum].IqRef_A =
+				            VIRTUALSPRING_getIqRef_A(springHandle[mtrNum]);
+				}
+
+
 				gIdq_ref_pu[mtrNum].value[1] = _IQmpy(
 				        gMotorVars[mtrNum].IqRef_A,
 				        _IQ(1.0 / USER_IQ_FULL_SCALE_CURRENT_A));
