@@ -680,7 +680,7 @@ void generic_motor_ISR(
         const _iq user_max_vs_mag_pu)
 {
     // Declaration of local variables
-	static _iq angle_pu = _IQ(0.0);
+	static _iq angle_pu[2] = {_IQ(0.0), _IQ(0.0)};
 	_iq speed_pu = _IQ(0.0);
 	_iq oneOverDcBus;
 	MATH_vec2 Iab_pu;
@@ -714,8 +714,8 @@ void generic_motor_ISR(
 	// Park transform calculations. Once these values are computed,
 	// they are copied into the PARK module, which then uses them to
 	// transform the voltages from Alpha/Beta to DQ reference frames.
-	phasor.value[0] = _IQcosPU(angle_pu);
-	phasor.value[1] = _IQsinPU(angle_pu);
+	phasor.value[0] = _IQcosPU(angle_pu[mtrNum]);
+	phasor.value[1] = _IQsinPU(angle_pu[mtrNum]);
 
 	// set the phasor in the Park transform
 	PARK_setPhasor(parkHandle[mtrNum], &phasor);
@@ -806,11 +806,11 @@ void generic_motor_ISR(
 				// compute the amount of slip
 				SLIP_run(slipHandle[mtrNum]);
 				// set magnetic angle
-				angle_pu = SLIP_getMagneticAngle(slipHandle[mtrNum]);
+				angle_pu[mtrNum] = SLIP_getMagneticAngle(slipHandle[mtrNum]);
 			}
 			else
 			{
-				angle_pu = ENC_getElecAngle(encHandle[mtrNum]);
+				angle_pu[mtrNum] = ENC_getElecAngle(encHandle[mtrNum]);
 			}
 
 			speed_pu = STPOSCONV_getVelocity(st_obj[mtrNum].posConvHandle);
@@ -819,7 +819,7 @@ void generic_motor_ISR(
 		{  // the alignment procedure is in effect
 
 			// force motor angle and speed to 0
-			angle_pu = _IQ(0.0);
+			angle_pu[mtrNum] = _IQ(0.0);
 			speed_pu = _IQ(0.0);
 
 			// set D-axis current to Rs estimation current
@@ -897,15 +897,15 @@ void generic_motor_ISR(
 		// was calculated for, by an amount which is proportional to the
 		// sampling frequency and the speed of the motor.  For steady-state
 		// speeds, we can calculate this angle delay and compensate for it.
-		ANGLE_COMP_run(angleCompHandle[mtrNum], speed_pu, angle_pu);
-		angle_pu = ANGLE_COMP_getAngleComp_pu(angleCompHandle[mtrNum]);
+		ANGLE_COMP_run(angleCompHandle[mtrNum], speed_pu, angle_pu[mtrNum]);
+		angle_pu[mtrNum] = ANGLE_COMP_getAngleComp_pu(angleCompHandle[mtrNum]);
 
 		// compute the sine and cosine phasor values which are part of the
 		// inverse Park transform calculations. Once these values are computed,
 		// they are copied into the IPARK module, which then uses them to
 		// transform the voltages from DQ to Alpha/Beta reference frames.
-		phasor.value[0] = _IQcosPU(angle_pu);
-		phasor.value[1] = _IQsinPU(angle_pu);
+		phasor.value[0] = _IQcosPU(angle_pu[mtrNum]);
+		phasor.value[1] = _IQsinPU(angle_pu[mtrNum]);
 
 		// set the phasor in the inverse Park transform
 		IPARK_setPhasor(iparkHandle[mtrNum], &phasor);
