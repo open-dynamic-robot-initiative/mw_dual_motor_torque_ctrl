@@ -788,7 +788,7 @@ void generic_motor_ISR(
 				*/
 				gIdq_ref_pu[mtrNum].value[1] = _IQmpy(
 				        gMotorVars[mtrNum].IqRef_A,
-				        _IQ(1.0/USER_IQ_FULL_SCALE_CURRENT_A));
+				        _IQ(1.0 / USER_IQ_FULL_SCALE_CURRENT_A));
 
 			}
 			else
