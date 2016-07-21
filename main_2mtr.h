@@ -33,7 +33,8 @@
  * --/COPYRIGHT--*/
 
 //! \file   solutions/instaspin_foc/src/main.h
-//! \brief Defines the structures, global initialization, and functions used in MAIN 
+//! \brief Defines the structures, global initialization, and functions used in
+//! \brief MAIN
 //!
 //! (C) Copyright 2011, Texas Instruments, Inc.
 
@@ -80,13 +81,15 @@
 // the defines
 
 
-//! \brief Defines the number of main iterations before global variables are updated
+//! \brief Defines the number of main iterations before global variables are
+//! \brief updated
 //!
 #define NUM_MAIN_TICKS_FOR_GLOBAL_VARIABLE_UPDATE  1
 
 //! \brief Defines the speed acceleration scale factor.
 //!
-#define MAX_ACCEL_KRPMPS_SF  _IQ(USER_MOTOR_NUM_POLE_PAIRS*1000.0/USER_TRAJ_FREQ_Hz/USER_IQ_FULL_SCALE_FREQ_Hz/60.0)
+#define MAX_ACCEL_KRPMPS_SF _IQ(USER_MOTOR_NUM_POLE_PAIRS * 1000.0 \
+        / USER_TRAJ_FREQ_Hz / USER_IQ_FULL_SCALE_FREQ_Hz / 60.0)
 
 //! \brief Initialization values of global variables
 //!
@@ -104,7 +107,7 @@
                                CTRL_State_Idle, \
                                EST_State_Idle, \
                                USER_ErrorCode_NoError, \
-                               {0,CTRL_TargetProc_Unknown,0,0}, \
+                               {0, CTRL_TargetProc_Unknown, 0, 0}, \
                                _IQ(0.0), \
                                _IQ(0.0), \
                                _IQ(0.0), \
@@ -143,8 +146,8 @@
                                _IQ(0.0), \
                                _IQ(0.0), \
                                _IQ(0.0), \
-                               {0,0,0}, \
-                               {0,0,0}, \
+                               {0, 0, 0}, \
+                               {0, 0, 0}, \
 						       ST_VARS_DEFAULTS_MTR1}
 
 #define MOTOR_Vars_INIT_Mtr2  {false, \
@@ -161,7 +164,7 @@
                                CTRL_State_Idle, \
                                EST_State_Idle, \
                                USER_ErrorCode_NoError, \
-                               {0,CTRL_TargetProc_Unknown,0,0}, \
+                               {0, CTRL_TargetProc_Unknown, 0, 0}, \
                                _IQ(0.0), \
                                _IQ(0.0), \
                                _IQ(0.0), \
@@ -200,8 +203,8 @@
                                _IQ(0.0), \
                                _IQ(0.0), \
                                _IQ(0.0), \
-                               {0,0,0}, \
-                               {0,0,0}, \
+                               {0, 0, 0}, \
+                               {0, 0, 0}, \
 						       ST_VARS_DEFAULTS_MTR2}
 
 // **************************************************************************
@@ -312,98 +315,104 @@ void runOffsetsCalculation(HAL_MtrSelect_e mtrNum);
 void runSetTrigger(void);
 
 
-//! \brief     Updates the global variables 
+//! \brief Updates the global variables
 //! 
 void updateGlobalVariables(EST_Handle handle, const uint_least8_t mtrNum);
 
 
-//! \brief     Updates version 1p6 of library
+//! \brief Updates version 1p6 of library
 //!
-void softwareUpdate1p6(EST_Handle handle,USER_Params *pUserParams);
+void softwareUpdate1p6(EST_Handle handle, USER_Params *pUserParams);
 
 
-//! \brief     Reset Ls Q format to a higher value when Ls identification starts
+//! \brief Reset Ls Q format to a higher value when Ls identification starts
 //!
 void CTRL_resetLs_qFmt(CTRL_Handle handle, const uint_least8_t qFmt);
 
 
-//! \brief     Recalculate Kp and Ki gains to fix the R/L limitation of 2000.0 and Kp limitation of 0.11
-//! \brief     as well as recalculates gains based on estimator state to allow low inductance pmsm to id
+//! \brief Recalculate Kp and Ki gains to fix the R/L limitation of 2000.0 and
+//! \brief Kp limitation of 0.11 as well as recalculates gains based on
+//! \brief estimator state to allow low inductance pmsm to id.
 //!
 void recalcKpKiPmsm(CTRL_Handle handle);
 
 
-//! \brief     Recalculate Kp and Ki gains to fix the R/L limitation of 2000.0 and Kp limitation of 0.11
+//! \brief Recalculate Kp and Ki gains to fix the R/L limitation of 2000.0 and
+//! \brief Kp limitation of 0.11.
 //!
 void recalcKpKi(CTRL_Handle handle);
 
 
-//! \brief     Calculates the maximum qFmt value for Ls identification, to get a more accurate Ls per unit
+//! \brief Calculates the maximum qFmt value for Ls identification, to get a
+//! \brief more accurate Ls per unit.
 //!
 void CTRL_calcMax_Ls_qFmt(CTRL_Handle handle, uint_least8_t *p_qFmt);
 
 
-//! \brief     Updates Iq reference and also sets the right sign to the speed reference for correct force angle
+//! \brief Updates Iq reference and also sets the right sign to the speed
+//! \brief reference for correct force angle.
 //!
 void updateIqRef(CTRL_Handle handle, const uint_least8_t mtrNum);
 
 
-//! \brief     Updates Kp and Ki gains in the controller object
+//! \brief Updates Kp and Ki gains in the controller object
 //!
 void updateKpKiGains(CTRL_Handle handle);
 
 
-//! \brief     Runs Rs online
+//! \brief Runs Rs online
 //!
 void runRsOnLine(CTRL_Handle handle);
 
 
-//! \brief     Updates CPU usage
+//! \brief Updates CPU usage
 //!
 void updateCPUusage(void);
 
 
-//! \brief     Set electrical frequency limit to zero while identifying an induction motor
+//! \brief Set electrical frequency limit to zero while identifying an
+//! \brief induction motor
 //!
 void setFeLimitZero(CTRL_Handle handle);
 
 
-//! \brief     Calculates Dir_qFmt for ACIM
+//! \brief Calculates Dir_qFmt for ACIM
 //!
 void acim_Dir_qFmtCalc(CTRL_Handle handle);
 
 
 //! \brief     Sets up the Clarke transform for current
 //!
-void setupClarke_I(CLARKE_Handle,const uint_least8_t);
+void setupClarke_I(CLARKE_Handle, const uint_least8_t);
 
 
 //! \brief     Sets up the Clarke transform for voltage
 //!
-void setupClarke_V(CLARKE_Handle,const uint_least8_t);
+void setupClarke_V(CLARKE_Handle, const uint_least8_t);
 
 
-CTRL_Handle CTRL_init(void *pMemory,const size_t numBytes);
+CTRL_Handle CTRL_init(void *pMemory, const size_t numBytes);
 
-void EST_getIdq_pu(EST_Handle handle,MATH_vec2 *pIdq_pu);
+void EST_getIdq_pu(EST_Handle handle, MATH_vec2 *pIdq_pu);
 
 #if !defined(FAST_ROM_V1p6)
-void EST_setEstParams(EST_Handle handle,USER_Params *pUserParams);
+void EST_setEstParams(EST_Handle handle, USER_Params *pUserParams);
 void EST_setupEstIdleState(EST_Handle handle);
 #endif
 
-EST_Handle EST_init(void *pMemory,const size_t numBytes);
+EST_Handle EST_init(void *pMemory, const size_t numBytes);
 
 //! \brief     Runs PowerWarp
 //! \param[in] handle     The estimator (EST) handle
 //! \param[in] Id_int_pu  The intermediate value along the Id trajectory in pu
 //! \param[in] Iq_pu      The measured Iq value in pu
 //! \return    The target value for the Id trajectory in pu
-_iq EST_runPowerWarp(EST_Handle handle,const _iq Id_int_pu,const _iq Iq_pu);
+_iq EST_runPowerWarp(EST_Handle handle, const _iq Id_int_pu, const _iq Iq_pu);
 
 _iq getAbsElecAngle(const _iq angle_pu);
 
-_iq getAbsMechAngle(_iq *pAngle_mech_poles, _iq *pAngle_z1_pu, const _iq angle_pu);
+_iq getAbsMechAngle(
+        _iq *pAngle_mech_poles, _iq *pAngle_z1_pu, const _iq angle_pu);
 
 void generic_motor_ISR(
         const HAL_MtrSelect_e mtrNum,
@@ -412,6 +421,3 @@ void generic_motor_ISR(
 
 //@} //defgroup
 #endif // end of _MAIN_H_ definition
-
-
-
