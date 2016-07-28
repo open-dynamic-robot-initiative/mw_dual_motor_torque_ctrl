@@ -76,6 +76,10 @@ extern "C" {
 #define ST_SAMPLE_TIME (ISR_TICKS_PER_SPINTAC_TICK / USER_ISR_FREQ_Hz)
 #define ST_SAMPLE_TIME_2 (ISR_TICKS_PER_SPINTAC_TICK_2 / USER_ISR_FREQ_Hz_2)
 
+#define ISR_TICKS_PER_POSCONV_TICK (USER_NUM_ISR_TICKS_PER_CTRL_TICK * USER_NUM_CTRL_TICKS_PER_POSCONV_TICK)
+#define ISR_TICKS_PER_POSCONV_TICK_2 (USER_NUM_ISR_TICKS_PER_CTRL_TICK_2 * USER_NUM_CTRL_TICKS_PER_POSCONV_TICK_2)
+#define ST_POS_CONV_SAMPLE_TIME (ISR_TICKS_PER_POSCONV_TICK / USER_ISR_FREQ_Hz)
+#define ST_POS_CONV_SAMPLE_TIME_2 (ISR_TICKS_PER_POSCONV_TICK_2 / USER_ISR_FREQ_Hz_2)
 
 //! \brief UNIT SCALING
 // **************************************************************************
@@ -276,14 +280,14 @@ inline void ST_setupPosConv_mtr1(ST_Handle handle) {
 	ST_Obj *obj = (ST_Obj *)handle;
 
     // Initalize SpinTAC Position Convert
-	STPOSCONV_setSampleTime_sec(obj->posConvHandle, _IQ24(ST_SAMPLE_TIME));
+	STPOSCONV_setSampleTime_sec(obj->posConvHandle, _IQ24(ST_POS_CONV_SAMPLE_TIME));
 	STPOSCONV_setERevMaximums_erev(obj->posConvHandle, _IQ24(1.0), 0);
-	STPOSCONV_setUnitConversion(obj->posConvHandle, USER_IQ_FULL_SCALE_FREQ_Hz, ST_SAMPLE_TIME, USER_MOTOR_NUM_POLE_PAIRS);
+	STPOSCONV_setUnitConversion(obj->posConvHandle, USER_IQ_FULL_SCALE_FREQ_Hz, ST_POS_CONV_SAMPLE_TIME, USER_MOTOR_NUM_POLE_PAIRS);
 	STPOSCONV_setMRevMaximum_mrev(obj->posConvHandle, _IQ24(10.0));
 	STPOSCONV_setLowPassFilterTime_tick(obj->posConvHandle, 3);
 	if(USER_MOTOR_TYPE ==  MOTOR_Type_Induction) {
 		// The Slip Compensator is only needed for ACIM
-		STPOSCONV_setupSlipCompensator(obj->posConvHandle, ST_SAMPLE_TIME, USER_IQ_FULL_SCALE_FREQ_Hz, USER_MOTOR_Rr, USER_MOTOR_Ls_d);
+		STPOSCONV_setupSlipCompensator(obj->posConvHandle, ST_POS_CONV_SAMPLE_TIME, USER_IQ_FULL_SCALE_FREQ_Hz, USER_MOTOR_Rr, USER_MOTOR_Ls_d);
 	}
 	STPOSCONV_setEnable(obj->posConvHandle, true);
 }
@@ -294,14 +298,14 @@ inline void ST_setupPosConv_mtr2(ST_Handle handle) {
 	ST_Obj *obj = (ST_Obj *)handle;
 
     // Initalize SpinTAC Position Convert
-	STPOSCONV_setSampleTime_sec(obj->posConvHandle, _IQ24(ST_SAMPLE_TIME_2));
+	STPOSCONV_setSampleTime_sec(obj->posConvHandle, _IQ24(ST_POS_CONV_SAMPLE_TIME_2));
 	STPOSCONV_setERevMaximums_erev(obj->posConvHandle, _IQ24(1.0), 0);
-	STPOSCONV_setUnitConversion(obj->posConvHandle, USER_IQ_FULL_SCALE_FREQ_Hz_2, ST_SAMPLE_TIME_2, USER_MOTOR_NUM_POLE_PAIRS_2);
+	STPOSCONV_setUnitConversion(obj->posConvHandle, USER_IQ_FULL_SCALE_FREQ_Hz_2, ST_POS_CONV_SAMPLE_TIME_2, USER_MOTOR_NUM_POLE_PAIRS_2);
 	STPOSCONV_setMRevMaximum_mrev(obj->posConvHandle, _IQ24(10.0));
 	STPOSCONV_setLowPassFilterTime_tick(obj->posConvHandle, 3);
 	if(USER_MOTOR_TYPE_2 ==  MOTOR_Type_Induction) {
 		// The Slip Compensator is only needed for ACIM
-		STPOSCONV_setupSlipCompensator(obj->posConvHandle, ST_SAMPLE_TIME_2, USER_IQ_FULL_SCALE_FREQ_Hz_2, USER_MOTOR_Rr_2, USER_MOTOR_Ls_d_2);
+		STPOSCONV_setupSlipCompensator(obj->posConvHandle, ST_POS_CONV_SAMPLE_TIME_2, USER_IQ_FULL_SCALE_FREQ_Hz_2, USER_MOTOR_Rr_2, USER_MOTOR_Ls_d_2);
 	}
 	STPOSCONV_setEnable(obj->posConvHandle, true);
 }

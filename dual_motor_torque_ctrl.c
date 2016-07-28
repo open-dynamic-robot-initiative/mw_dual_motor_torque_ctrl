@@ -87,6 +87,13 @@ PID_Handle      pidHandle[2][3];    //!< three handles for PID controllers
 									//!< 0 - Speed, 1 - Id, 2 - Iq
 uint16_t        stCntSpeed[2];      //!< count variable to decimate the execution
 									//!< of SpinTAC Velocity Control
+uint16_t        stCntPosConv[2] = {0, 0}; //!< count variable to decimate the
+                                          //!< execution of SpinTAC Position Converter
+//! Store this to array so it can be used in generic_motor_ISR.
+const uint16_t  gNumIsrTicksPerPosConvTick[2] = {
+        ISR_TICKS_PER_POSCONV_TICK,
+        ISR_TICKS_PER_POSCONV_TICK_2
+};
 
 IPARK_Handle    iparkHandle[2];     //!< the handle for the inverse Park
 									//!< transform
@@ -754,7 +761,7 @@ void generic_motor_ISR(
 	ENC_calcElecAngle(
 	        encHandle[mtrNum], HAL_getQepPosnCounts(halHandleMtr[mtrNum]));
 
-	if(stCntSpeed[mtrNum] >= gUserParams[mtrNum].numCtrlTicksPerSpeedTick)
+	if(stCntPosConv[mtrNum]++ >= gNumIsrTicksPerPosConvTick[mtrNum])
 	{
 		// Calculate the feedback speed
 		ST_runPosConv(
