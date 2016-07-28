@@ -232,6 +232,21 @@ void main(void)
 	// Layer (HAL). It uses all values stored in gUserParams.
 	HAL_setParams(halHandle, &gUserParams[HAL_MTR1]);
 
+	// Overwrite GPIO Qualification Settings
+	// =====================================
+	// To allow fast movement with lots-of-lines-encoders, the sampling period of
+	// the GPIO qualification filter has to be reduced (otherwise encoder pulses
+	// get rejected as noise).  The following lines overwrite the settings done
+	// in HAL_setupGpio() (hal.c).
+	// "period = 11" results in actual sampling period 11*2*(1/90MHz) = 0.24us
+	// Note: Setting the period is done for blocks of GPIO pins.
+	//
+	// GPIO 16-23 (covering eQEP1)
+	GPIO_setQualificationPeriod(hal.gpioHandle, GPIO_Number_16, 11); //GPIO16-23
+	// GPIO 50-55 and 56-58 (covering eQEP2)
+	GPIO_setQualificationPeriod(hal.gpioHandle, GPIO_Number_50, 11); //GPIO50-55
+	GPIO_setQualificationPeriod(hal.gpioHandle, GPIO_Number_56, 11); //GPIO56-58
+
 	// initialize the estimator
 	estHandle[HAL_MTR1] = EST_init((void *)USER_EST_HANDLE_ADDRESS, 0x200);
 	estHandle[HAL_MTR2] = EST_init((void *)USER_EST_HANDLE_ADDRESS_1, 0x200);
