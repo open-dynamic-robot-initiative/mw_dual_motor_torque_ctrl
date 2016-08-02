@@ -761,8 +761,9 @@ void generic_motor_ISR(
 	ENC_calcElecAngle(
 	        encHandle[mtrNum], HAL_getQepPosnCounts(halHandleMtr[mtrNum]));
 
-	if(stCntPosConv[mtrNum]++ >= gNumIsrTicksPerPosConvTick[mtrNum])
+	if(++ stCntPosConv[mtrNum]>= gNumIsrTicksPerPosConvTick[mtrNum])
 	{
+	    stCntPosConv[mtrNum] = 0;
 		// Calculate the feedback speed
 		ST_runPosConv(
 				stHandle[mtrNum],
@@ -789,7 +790,7 @@ void generic_motor_ISR(
 			              >= gUserParams[mtrNum].numCtrlTicksPerSpeedTick)
 			{
 				// Reset the Speed execution counter.
-				stCntSpeed[mtrNum] = 0;
+				stCntSpeed[mtrNum] = 0;  //FIXME I dont think it is correct like this
 
 				/*
 				// Pass the configuration to SpinTAC Velocity Move
@@ -843,7 +844,6 @@ void generic_motor_ISR(
 				gIdq_ref_pu[mtrNum].value[1] = _IQmpy(
 				        gMotorVars[mtrNum].IqRef_A,
 				        _IQ(1.0 / USER_IQ_FULL_SCALE_CURRENT_A));
-
 			}
 			else
 			{
@@ -1387,27 +1387,26 @@ _iq ST_runVelCtl(ST_Handle handle, _iq speedFeedback)
 // TODO: this does not fit directly to this lab
 void updateIqRef(CTRL_Handle handle, const uint_least8_t mtrNum)
 {
-    /*
-    _iq iq_ref = _IQmpy(gMotorVars[mtrNum].IqRef_A,
-            _IQ(1.0/USER_IQ_FULL_SCALE_CURRENT_A));
-
-    // set the speed reference so that the forced angle rotates in the correct
-    // direction for startup
-    if(_IQabs(gMotorVars[mtrNum].Speed_krpm) < _IQ(0.01))
-    {
-        if(iq_ref < _IQ(0.0))
-        {
-            CTRL_setSpd_ref_krpm(handle, _IQ(-0.01));
-        }
-        else if(iq_ref > _IQ(0.0))
-        {
-            CTRL_setSpd_ref_krpm(handle, _IQ(0.01));
-        }
-    }
-
-    // Set the Iq reference that use to come out of the PI speed control
-    CTRL_setIq_ref_pu(handle, iq_ref);
-    */
+//    _iq iq_ref = _IQmpy(
+//            gMotorVars[mtrNum].IqRef_A,
+//            _IQ(1.0 / USER_IQ_FULL_SCALE_CURRENT_A));
+//
+//    // set the speed reference so that the forced angle rotates in the correct
+//    // direction for startup
+//    if(_IQabs(gMotorVars[mtrNum].Speed_krpm) < _IQ(0.01))
+//    {
+//        if(iq_ref < _IQ(0.0))
+//        {
+//            CTRL_setSpd_ref_krpm(handle, _IQ(-0.01));
+//        }
+//        else if(iq_ref > _IQ(0.0))
+//        {
+//            CTRL_setSpd_ref_krpm(handle, _IQ(0.01));
+//        }
+//    }
+//
+//    // Set the Iq reference for the controller
+//    gIdq_ref_pu[mtrNum].value[1] = iq_ref;
 
     return;
 } // end of updateIqRef() function
