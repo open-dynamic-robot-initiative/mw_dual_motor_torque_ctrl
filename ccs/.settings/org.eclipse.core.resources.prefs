@@ -6,5 +6,7 @@ encoding//Release/dual_motor_vel_ctrl/subdir_vars.mk=UTF-8
 encoding//Release/makefile=UTF-8
 encoding//Release/objects.mk=UTF-8
 encoding//Release/sources.mk=UTF-8
+encoding//Release/src/subdir_rules.mk=UTF-8
+encoding//Release/src/subdir_vars.mk=UTF-8
 encoding//Release/subdir_rules.mk=UTF-8
 encoding//Release/subdir_vars.mk=UTF-8

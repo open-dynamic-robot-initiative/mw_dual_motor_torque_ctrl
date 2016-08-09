@@ -3,9 +3,6 @@
 	<storageModule configRelations="2" moduleId="org.eclipse.cdt.core.settings">
 		<cconfiguration id="com.ti.ccstudio.buildDefinitions.C2000.Debug.1818092712.883404825">
 			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="com.ti.ccstudio.buildDefinitions.C2000.Debug.1818092712.883404825" moduleId="org.eclipse.cdt.core.settings" name="Release">
-				<macros>
-					<stringMacro name="MW_INSTALL_DIR" type="VALUE_TEXT" value="${PROJECT_ROOT}\..\..\..\..\..\..\..\..\..\.."/>
-				</macros>
 				<externalSettings/>
 				<extensions>
 					<extension id="com.ti.ccstudio.errorparser.CoffErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
@@ -39,9 +36,9 @@
 								<option id="com.ti.ccstudio.buildDefinitions.C2000_6.4.compilerID.OPT_FOR_SPEED.323728770" name="Speed vs. size trade-offs (--opt_for_speed, -mf)" superClass="com.ti.ccstudio.buildDefinitions.C2000_6.4.compilerID.OPT_FOR_SPEED" value="com.ti.ccstudio.buildDefinitions.C2000_6.4.compilerID.OPT_FOR_SPEED.2" valueType="enumerated"/>
 								<option id="com.ti.ccstudio.buildDefinitions.C2000_6.4.compilerID.INCLUDE_PATH.1278596189" name="Add dir to #include search path (--include_path, -I)" superClass="com.ti.ccstudio.buildDefinitions.C2000_6.4.compilerID.INCLUDE_PATH" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${MW_INSTALL_DIR}/sw/modules/hal/boards/boostxldrv8305_revA/f28x/f2806x/src/&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${MW_INSTALL_DIR}/sw/solutions/my_motion/src&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${PROJECT_ROOT}/../src&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${CG_TOOL_ROOT}/include&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${PROJECT_ROOT}/../../../src&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${USER_CONFIG_DIR}&quot;"/>
 									<listOptionValue builtIn="false" value="${MW_INSTALL_DIR}"/>
 								</option>
 								<option id="com.ti.ccstudio.buildDefinitions.C2000_6.4.compilerID.DEBUGGING_MODEL.1770954213" name="Debugging model" superClass="com.ti.ccstudio.buildDefinitions.C2000_6.4.compilerID.DEBUGGING_MODEL" value="com.ti.ccstudio.buildDefinitions.C2000_6.4.compilerID.DEBUGGING_MODEL.SYMDEBUG__DWARF" valueType="enumerated"/>
@@ -92,9 +89,6 @@
 		</cconfiguration>
 		<cconfiguration id="com.ti.ccstudio.buildDefinitions.C2000.Debug.1818092712.883404825.1668180382">
 			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="com.ti.ccstudio.buildDefinitions.C2000.Debug.1818092712.883404825.1668180382" moduleId="org.eclipse.cdt.core.settings" name="Flash">
-				<macros>
-					<stringMacro name="MW_INSTALL_DIR" type="VALUE_TEXT" value="${PROJECT_ROOT}\..\..\..\..\..\..\..\..\..\.."/>
-				</macros>
 				<externalSettings/>
 				<extensions>
 					<extension id="com.ti.ccstudio.errorparser.CoffErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
