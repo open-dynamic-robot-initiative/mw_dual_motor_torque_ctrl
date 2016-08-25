@@ -26,12 +26,16 @@ extern "C" {
 #define CAN_MBOX_Iq  1 << 14
 #define CAN_MBOX_POSITION  1 << 13
 #define CAN_MBOX_SPEED  1 << 12
-#define CAN_MBOX_ALL  0x0000F000
+#define CAN_MBOX_COMMANDS 0
 
-#define CAN_ID_STATUSMSG  0
-#define CAN_ID_Iq  1
-#define CAN_ID_POSITION  2
-#define CAN_ID_SPEED  3
+#define CAN_MBOX_ALL  0x0000F001
+
+
+#define CAN_ID_COMMANDS 0
+#define CAN_ID_STATUSMSG  100
+#define CAN_ID_Iq  101
+#define CAN_ID_POSITION  102
+#define CAN_ID_SPEED  103
 
 
 // **************************************************************************

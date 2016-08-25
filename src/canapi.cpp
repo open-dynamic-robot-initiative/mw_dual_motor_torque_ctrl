@@ -167,7 +167,7 @@ void CAN_setupMboxes()
     ECanaMboxes.MBOX14.MSGID.all = (uint32_t)CAN_ID_Iq << 18;
     ECanaMboxes.MBOX13.MSGID.all = (uint32_t)CAN_ID_POSITION << 18;
     ECanaMboxes.MBOX12.MSGID.all = (uint32_t)CAN_ID_SPEED << 18;
-//    ECanaMboxes.MBOX0.MSGID.all = 0x9555AAA0;
+    ECanaMboxes.MBOX0.MSGID.all = (uint32_t)CAN_ID_COMMANDS << 18;
 //    ECanaMboxes.MBOX1.MSGID.all = 0x9555AAA1;
 //    ECanaMboxes.MBOX2.MSGID.all = 0x9555AAA2;
 //    ECanaMboxes.MBOX3.MSGID.all = 0x9555AAA3;
@@ -202,10 +202,10 @@ void CAN_setupMboxes()
 //    ECanaMboxes.MBOX30.MSGID.all = 0x9555AAAE;
 //    ECanaMboxes.MBOX31.MSGID.all = 0x9555AAAF;
 
-    // Configure Mailboxes 0-15 as Tx, 16-31 as Rx
-    // Since this write is to the entire register (instead of a bit
-    // field) a shadow register is not required.
-    ECanaRegs.CANMD.all = 0xFFFF0000;
+    // Configure Mailboxes 0-4 for receiving, rest for transmitting
+    // Since this write is to the entire register (instead of a bit field) a
+    // shadow register is not required.
+    ECanaRegs.CANMD.all = 0x0000000F;
 
     // Enable all used Mailboxes */
     // Since this write is to the entire register (instead of a bit
@@ -213,11 +213,11 @@ void CAN_setupMboxes()
     ECanaRegs.CANME.all = CAN_MBOX_ALL;
 
     // Specify that 8 bits will be sent/received
-    ECanaMboxes.MBOX0.MSGCTRL.bit.DLC = 8;
-    ECanaMboxes.MBOX1.MSGCTRL.bit.DLC = 8;
-    ECanaMboxes.MBOX2.MSGCTRL.bit.DLC = 8;
-    ECanaMboxes.MBOX3.MSGCTRL.bit.DLC = 8;
-    ECanaMboxes.MBOX4.MSGCTRL.bit.DLC = 8;
+//    ECanaMboxes.MBOX0.MSGCTRL.bit.DLC = 8;
+//    ECanaMboxes.MBOX1.MSGCTRL.bit.DLC = 8;
+//    ECanaMboxes.MBOX2.MSGCTRL.bit.DLC = 8;
+//    ECanaMboxes.MBOX3.MSGCTRL.bit.DLC = 8;
+//    ECanaMboxes.MBOX4.MSGCTRL.bit.DLC = 8;
     ECanaMboxes.MBOX5.MSGCTRL.bit.DLC = 8;
     ECanaMboxes.MBOX6.MSGCTRL.bit.DLC = 8;
     ECanaMboxes.MBOX7.MSGCTRL.bit.DLC = 8;
