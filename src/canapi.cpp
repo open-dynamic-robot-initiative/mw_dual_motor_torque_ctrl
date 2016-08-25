@@ -34,6 +34,7 @@ void InitECana()        // Initialize eCAN-A module
 	/* Configure eCAN for HECC mode - (reqd to access mailboxes 16 thru 31) */
 	// HECC mode also enables time-stamping feature
 
+	// only use SSC mode
 	ECanaShadow.CANMC.all = ECanaRegs.CANMC.all;
 	ECanaShadow.CANMC.bit.SCB = 0;
 	ECanaRegs.CANMC.all = ECanaShadow.CANMC.all;

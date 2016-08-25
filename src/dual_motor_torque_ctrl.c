@@ -198,6 +198,7 @@ _iq gSpeed_hz_to_krpm_sf[2];
 
 _iq gCurrent_A_to_pu_sf[2];
 
+uint16_t canCnt = 0;
 
 // **************************************************************************
 // the functions
@@ -600,18 +601,25 @@ void main(void)
 //			while(ECanaRegs.CANTA.bit.TA0 != 1);  // Wait for all TAn bits to be set..
 //			ECanaRegs.CANTA.bit.TA0 = 1;   // Clear all TAn
 
-			CAN_StatusMsg_t status;
-			status.bit.enable_system = gMotorVars[HAL_MTR1].Flag_enableSys;
-			status.bit.run_motor1 = gMotorVars[HAL_MTR1].Flag_Run_Identify;
-			status.bit.run_motor2 = gMotorVars[HAL_MTR2].Flag_Run_Identify;
-			status.bit.qvalue = 24;
 
-			CAN_setStatusMsg(status);
-			CAN_setIq(gMotorVars[HAL_MTR1].Iq_A, gMotorVars[HAL_MTR2].Iq_A);
-			CAN_setPosition(st_obj[HAL_MTR1].vel.conv.Pos_mrev, st_obj[HAL_MTR2].vel.conv.Pos_mrev);
-			CAN_setSpeed(gMotorVars[HAL_MTR1].Speed_krpm, gMotorVars[HAL_MTR2].Speed_krpm);
+			if(canCnt++
+					> (uint_least32_t)(USER_ISR_FREQ_Hz / LED_BLINK_FREQ_Hz))
+			{
+				canCnt = 0;
+				CAN_StatusMsg_t status;
+				status.bit.enable_system = gMotorVars[HAL_MTR1].Flag_enableSys;
+				status.bit.run_motor1 = gMotorVars[HAL_MTR1].Flag_Run_Identify;
+				status.bit.run_motor2 = gMotorVars[HAL_MTR2].Flag_Run_Identify;
+				status.bit.qvalue = 24;
 
-			CAN_send(CAN_MBOX_STATUSMSG | CAN_MBOX_Iq | CAN_MBOX_POSITION | CAN_MBOX_SPEED);
+				CAN_setStatusMsg(status);
+				CAN_setIq(gMotorVars[HAL_MTR1].Iq_A, gMotorVars[HAL_MTR2].Iq_A);
+				CAN_setPosition(st_obj[HAL_MTR1].vel.conv.Pos_mrev, st_obj[HAL_MTR2].vel.conv.Pos_mrev);
+				CAN_setSpeed(gMotorVars[HAL_MTR1].Speed_krpm, gMotorVars[HAL_MTR2].Speed_krpm);
+
+				CAN_send(CAN_MBOX_STATUSMSG | CAN_MBOX_Iq | CAN_MBOX_POSITION | CAN_MBOX_SPEED);
+				gFoobar++;
+			}
 
 			for(mtrNum=HAL_MTR1;mtrNum<=HAL_MTR2;mtrNum++)
 			{
