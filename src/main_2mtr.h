@@ -66,7 +66,6 @@
 
 
 // drivers
-#include "sw/drivers/can/src/32b/f28x/f2806x/can.h"
 
 
 // platforms
@@ -77,6 +76,8 @@
 
 // SpinTAC
 #include "spintac_velocity_2mtr.h"
+
+#include "canapi.h"
 
 // **************************************************************************
 // the defines
@@ -426,9 +427,6 @@ void generic_motor_ISR(
         const _iq user_motor_res_est_current,
         const _iq user_max_vs_mag_pu);
 
-
-void InitECana();        // Initialize eCAN-A module
-void InitECanaGpio(HAL_Handle halHandle);
 
 //@} //defgroup
 #endif // end of _MAIN_H_ definition
