@@ -66,6 +66,7 @@
 
 
 // drivers
+#include "sw/drivers/can/src/32b/f28x/f2806x/can.h"
 
 
 // platforms
@@ -288,6 +289,12 @@ typedef struct _MOTOR_Vars_t_
 // **************************************************************************
 // the globals
 
+#pragma DATA_SECTION(ECanaRegs,"ECanaRegsFile");
+volatile struct ECAN_REGS ECanaRegs;
+
+#pragma DATA_SECTION(ECanaMboxes,"ECanaMboxesFile");
+volatile struct ECAN_MBOXES ECanaMboxes;
+
 
 // **************************************************************************
 // the function prototypes
@@ -418,6 +425,10 @@ void generic_motor_ISR(
         const HAL_MtrSelect_e mtrNum,
         const _iq user_motor_res_est_current,
         const _iq user_max_vs_mag_pu);
+
+
+void InitECana();        // Initialize eCAN-A module
+void InitECanaGpio(HAL_Handle halHandle);
 
 //@} //defgroup
 #endif // end of _MAIN_H_ definition
