@@ -305,6 +305,8 @@ volatile struct ECAN_MBOXES ECanaMboxes;
 interrupt void motor1_ISR(void);
 interrupt void motor2_ISR(void);
 
+interrupt void can1_ISR();
+
 void pidSetup(HAL_MtrSelect_e mtrNum);
 
 

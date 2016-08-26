@@ -30,10 +30,6 @@ void InitECana()        // Initialize eCAN-A module
 	ECanaShadow.CANRIOC.bit.RXFUNC = 1;
 	ECanaRegs.CANRIOC.all = ECanaShadow.CANRIOC.all;
 
-
-	/* Configure eCAN for HECC mode - (reqd to access mailboxes 16 thru 31) */
-	// HECC mode also enables time-stamping feature
-
 	// only use SSC mode
 	ECanaShadow.CANMC.all = ECanaRegs.CANMC.all;
 	ECanaShadow.CANMC.bit.SCB = 0;
@@ -163,44 +159,12 @@ void CAN_setupMboxes()
 {
 	   // Mailboxs can be written to 16-bits or 32-bits at a time
     // Write to the MSGID field of TRANSMIT mailboxes MBOX0 - 15
+//    ECanaMboxes.MBOX1.MSGID.all = 0x9555AAA1;
     ECanaMboxes.MBOX15.MSGID.all = (uint32_t)CAN_ID_STATUSMSG << 18;
     ECanaMboxes.MBOX14.MSGID.all = (uint32_t)CAN_ID_Iq << 18;
     ECanaMboxes.MBOX13.MSGID.all = (uint32_t)CAN_ID_POSITION << 18;
     ECanaMboxes.MBOX12.MSGID.all = (uint32_t)CAN_ID_SPEED << 18;
     ECanaMboxes.MBOX0.MSGID.all = (uint32_t)CAN_ID_COMMANDS << 18;
-//    ECanaMboxes.MBOX1.MSGID.all = 0x9555AAA1;
-//    ECanaMboxes.MBOX2.MSGID.all = 0x9555AAA2;
-//    ECanaMboxes.MBOX3.MSGID.all = 0x9555AAA3;
-//    ECanaMboxes.MBOX4.MSGID.all = 0x9555AAA4;
-//    ECanaMboxes.MBOX5.MSGID.all = 0x9555AAA5;
-//    ECanaMboxes.MBOX6.MSGID.all = 0x9555AAA6;
-//    ECanaMboxes.MBOX7.MSGID.all = 0x9555AAA7;
-//    ECanaMboxes.MBOX8.MSGID.all = 0x9555AAA8;
-//    ECanaMboxes.MBOX9.MSGID.all = 0x9555AAA9;
-//    ECanaMboxes.MBOX10.MSGID.all = 0x9555AAAA;
-//    ECanaMboxes.MBOX11.MSGID.all = 0x9555AAAB;
-//    ECanaMboxes.MBOX12.MSGID.all = 0x9555AAAC;
-//    ECanaMboxes.MBOX13.MSGID.all = 0x9555AAAD;
-//    ECanaMboxes.MBOX14.MSGID.all = 0x9555AAAE;
-//    ECanaMboxes.MBOX15.MSGID.all = 0x9555AAAF;
-
-    // Write to the MSGID field of RECEIVE mailboxes MBOX16 - 31
-//    ECanaMboxes.MBOX16.MSGID.all = 0x9555AAA0;
-//    ECanaMboxes.MBOX17.MSGID.all = 0x9555AAA1;
-//    ECanaMboxes.MBOX18.MSGID.all = 0x9555AAA2;
-//    ECanaMboxes.MBOX19.MSGID.all = 0x9555AAA3;
-//    ECanaMboxes.MBOX20.MSGID.all = 0x9555AAA4;
-//    ECanaMboxes.MBOX21.MSGID.all = 0x9555AAA5;
-//    ECanaMboxes.MBOX22.MSGID.all = 0x9555AAA6;
-//    ECanaMboxes.MBOX23.MSGID.all = 0x9555AAA7;
-//    ECanaMboxes.MBOX24.MSGID.all = 0x9555AAA8;
-//    ECanaMboxes.MBOX25.MSGID.all = 0x9555AAA9;
-//    ECanaMboxes.MBOX26.MSGID.all = 0x9555AAAA;
-//    ECanaMboxes.MBOX27.MSGID.all = 0x9555AAAB;
-//    ECanaMboxes.MBOX28.MSGID.all = 0x9555AAAC;
-//    ECanaMboxes.MBOX29.MSGID.all = 0x9555AAAD;
-//    ECanaMboxes.MBOX30.MSGID.all = 0x9555AAAE;
-//    ECanaMboxes.MBOX31.MSGID.all = 0x9555AAAF;
 
     // Configure Mailboxes 0-4 for receiving, rest for transmitting
     // Since this write is to the entire register (instead of a bit field) a
@@ -229,4 +193,18 @@ void CAN_setupMboxes()
     ECanaMboxes.MBOX13.MSGCTRL.bit.DLC = 8;
     ECanaMboxes.MBOX14.MSGCTRL.bit.DLC = 8;
     ECanaMboxes.MBOX15.MSGCTRL.bit.DLC = 8;
+
+
+    // setup interrupts
+    // mbox0 is receive mailbox for commands which should be executed
+    // immediately. Use interrupt for this one.
+
+	ENABLE_PROTECTED_REGISTER_WRITE_MODE;
+    // Enable interrupt for this mailbox
+    ECanaRegs.CANMIM.bit.MIM0 = 1;
+    // use ECAN1INT
+    ECanaRegs.CANMIL.bit.MIL0 = 1;
+    // generally enable ECAN1INT
+    ECanaRegs.CANGIM.bit.I1EN = 1;
+	DISABLE_PROTECTED_REGISTER_WRITE_MODE;
 }

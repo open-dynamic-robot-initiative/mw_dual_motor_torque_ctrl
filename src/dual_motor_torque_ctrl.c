@@ -580,6 +580,17 @@ void main(void)
 	InitECana();
 	CAN_setupMboxes();
 
+	{ // Set ISR for CAN interrupt
+		PIE_Obj *pie = hal.pieHandle;
+		ENABLE_PROTECTED_REGISTER_WRITE_MODE;
+		pie->ECAN1INT = &can1_ISR;
+		DISABLE_PROTECTED_REGISTER_WRITE_MODE;
+
+		PIE_enableInt(hal.pieHandle, PIE_GroupNumber_9, PIE_InterruptSource_ECANA1);
+		// enable the cpu interrupt for PIE group 9 interrupts
+		CPU_enableInt(hal.cpuHandle, CPU_IntNumber_9);
+	}
+
 
 	// Begin the background loop
 	for(;;)
@@ -618,7 +629,6 @@ void main(void)
 				CAN_setSpeed(gMotorVars[HAL_MTR1].Speed_krpm, gMotorVars[HAL_MTR2].Speed_krpm);
 
 				CAN_send(CAN_MBOX_STATUSMSG | CAN_MBOX_Iq | CAN_MBOX_POSITION | CAN_MBOX_SPEED);
-				gFoobar++;
 			}
 
 			for(mtrNum=HAL_MTR1;mtrNum<=HAL_MTR2;mtrNum++)
@@ -1069,6 +1079,17 @@ void generic_motor_ISR(
 }
 
 
+interrupt void can1_ISR()
+{
+	gFoobar++;
+
+	// Acknowledge interrupt
+	ECanaRegs.CANRMP.bit.RMP0 = 1; // clear by writing 1
+
+	// acknowledge interrupt from PIE
+	HAL_Obj *obj = (HAL_Obj *)halHandle;
+	PIE_clearInt(obj->pieHandle, PIE_GroupNumber_9);
+}
 
 
 void pidSetup(HAL_MtrSelect_e mtrNum)
