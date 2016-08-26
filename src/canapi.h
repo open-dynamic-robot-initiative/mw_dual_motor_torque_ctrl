@@ -56,6 +56,7 @@ typedef union _CAN_StatusMsg_t_ {
    struct CAN_STATUSMSG_BITS  bit;
 } CAN_StatusMsg_t;
 
+
 // **************************************************************************
 // the globals
 

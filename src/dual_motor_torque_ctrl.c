@@ -1083,8 +1083,44 @@ interrupt void can1_ISR()
 {
 	gFoobar++;
 
-	// Acknowledge interrupt
-	ECanaRegs.CANRMP.bit.RMP0 = 1; // clear by writing 1
+	// The same ISR is used by the eCAN module, independent of the source of the
+	// interrupt.  This means, we have to distinguish the various cases here,
+	// based on the values of certain registers (see SPRUH18f, section 16.13)
+
+	// This ISR is used by GIF1
+
+	// TODO: SPRU074F, sec. 3.4.3.2 describes how to correctly handle all cases
+	// (I don't fully understand what is meant by a "half-word read", though).
+
+	// Since this ISR is currently only used for mailbox 0 receives, we only
+	// check for this here and simply ignore other cases that call this ISR
+	// (there shouldn't be any).
+	// Note: ECanaRegs.CANGIF1.bit.MIV1 contains the number of the mailbox that
+	// caused this interrupt (this should always be 0 for now).
+	if (ECanaRegs.CANRMP.bit.RMP0 == 1)
+	{
+		uint32_t cmd_id = ECanaMboxes.MBOX0.MDH.all;
+		uint32_t cmd_val = ECanaMboxes.MBOX0.MDL.all;
+
+		switch (cmd_id)
+		{
+		case 1: // enable system
+			gMotorVars[HAL_MTR1].Flag_enableSys = cmd_val;
+			break;
+		case 2: // run motor 1
+			gMotorVars[HAL_MTR1].Flag_Run_Identify = cmd_val;
+			break;
+		case 3: // run motor 2
+			gMotorVars[HAL_MTR2].Flag_Run_Identify = cmd_val;
+			break;
+		case 4: // motor 1 enable spring
+			spring[HAL_MTR1].enabled = cmd_val;
+			break;
+		}
+
+		// Acknowledge interrupt
+		ECanaRegs.CANRMP.bit.RMP0 = 1; // clear by writing 1
+	}
 
 	// acknowledge interrupt from PIE
 	HAL_Obj *obj = (HAL_Obj *)halHandle;
