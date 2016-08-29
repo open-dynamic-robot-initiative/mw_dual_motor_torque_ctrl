@@ -620,7 +620,7 @@ void main(void)
 				status.bit.ready_motor2 = !gMotorVars[HAL_MTR2].Flag_enableAlignment;
 
 				CAN_setStatusMsg(status);
-				CAN_send(CAN_MBOX_STATUSMSG);
+				CAN_send(CAN_MBOX_OUT_STATUSMSG);
 			}
 
 			for(mtrNum=HAL_MTR1;mtrNum<=HAL_MTR2;mtrNum++)
@@ -752,7 +752,7 @@ interrupt void motor1_ISR(void)
 		CAN_setDataMotor1(current_iq,
 				st_obj[HAL_MTR1].vel.conv.Pos_mrev,
 				speed);
-		CAN_send(CAN_MBOX_IqPos_mtr1 | CAN_MBOX_SPEED_mtr1);
+		CAN_send(CAN_MBOX_OUT_IqPos_mtr1 | CAN_MBOX_OUT_SPEED_mtr1);
 		// TODO: is it maybe better to not block here but just initiate
 		// transmission and then wait at the end of the ISR till it is finished?
 	}
@@ -798,7 +798,7 @@ interrupt void motor2_ISR(void)
 		CAN_setDataMotor2(current_iq,
 				st_obj[HAL_MTR2].vel.conv.Pos_mrev,
 				speed);
-		CAN_send(CAN_MBOX_IqPos_mtr2 | CAN_MBOX_SPEED_mtr2);
+		CAN_send(CAN_MBOX_OUT_IqPos_mtr2 | CAN_MBOX_OUT_SPEED_mtr2);
 	}
 
 	generic_motor_ISR(HAL_MTR2,
@@ -942,6 +942,13 @@ void generic_motor_ISR(
 				if (VIRTUALSPRING_isEnabled(springHandle[mtrNum])) {
 				    gMotorVars[mtrNum].IqRef_A =
 				            VIRTUALSPRING_getIqRef_A(springHandle[mtrNum]);
+				}
+				else {
+					if (mtrNum == HAL_MTR1) {
+						gMotorVars[mtrNum].IqRef_A = ECanaMboxes.MBOX1.MDL.all;
+					} else {
+						gMotorVars[mtrNum].IqRef_A = ECanaMboxes.MBOX1.MDH.all;
+					}
 				}
 
 

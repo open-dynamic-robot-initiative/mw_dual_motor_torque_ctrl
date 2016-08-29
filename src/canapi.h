@@ -22,23 +22,26 @@ extern "C" {
 // **************************************************************************
 // the defines
 
-#define CAN_MBOX_STATUSMSG  (uint32_t) 1 << 15
-#define CAN_MBOX_IqPos_mtr1  (uint32_t) 1 << 14
-#define CAN_MBOX_IqPos_mtr2  (uint32_t) 1 << 13
-#define CAN_MBOX_SPEED_mtr1  (uint32_t) 1 << 12
-#define CAN_MBOX_SPEED_mtr2  (uint32_t) 1 << 11
-#define CAN_MBOX_COMMANDS (uint32_t) 1 << 0
+#define CAN_MBOX_OUT_STATUSMSG  (uint32_t) 1 << 15
+#define CAN_MBOX_OUT_IqPos_mtr1 (uint32_t) 1 << 14
+#define CAN_MBOX_OUT_IqPos_mtr2 (uint32_t) 1 << 13
+#define CAN_MBOX_OUT_SPEED_mtr1 (uint32_t) 1 << 12
+#define CAN_MBOX_OUT_SPEED_mtr2 (uint32_t) 1 << 11
+#define CAN_MBOX_IN_COMMANDS    (uint32_t) 1 << 0
+#define CAN_MBOX_IN_IqRef       (uint32_t) 1 << 1
 
-#define CAN_MBOX_ALL  CAN_MBOX_STATUSMSG \
-	| CAN_MBOX_IqPos_mtr1 \
-	| CAN_MBOX_IqPos_mtr2 \
-	| CAN_MBOX_SPEED_mtr1 \
-	| CAN_MBOX_SPEED_mtr2 \
-	| CAN_MBOX_COMMANDS
+#define CAN_MBOX_ALL  CAN_MBOX_OUT_STATUSMSG \
+	| CAN_MBOX_OUT_IqPos_mtr1 \
+	| CAN_MBOX_OUT_IqPos_mtr2 \
+	| CAN_MBOX_OUT_SPEED_mtr1 \
+	| CAN_MBOX_OUT_SPEED_mtr2 \
+	| CAN_MBOX_IN_COMMANDS \
+	| CAN_MBOX_IN_IqRef
 
 
-#define CAN_ID_COMMANDS 0
-#define CAN_ID_STATUSMSG  0x10
+#define CAN_ID_COMMANDS    0x00
+#define CAN_ID_IqRef       0x05
+#define CAN_ID_STATUSMSG   0x10
 #define CAN_ID_IqPos_mtr1  0x21
 #define CAN_ID_IqPos_mtr2  0x22
 #define CAN_ID_SPEED_mtr1  0x31

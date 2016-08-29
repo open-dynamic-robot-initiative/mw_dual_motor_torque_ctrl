@@ -169,10 +169,17 @@ void CAN_setupMboxes()
     ECanaMboxes.MBOX12.MSGID.all = (uint32_t)CAN_ID_SPEED_mtr1 << 18;
     ECanaMboxes.MBOX11.MSGID.all = (uint32_t)CAN_ID_SPEED_mtr2 << 18;
     ECanaMboxes.MBOX0.MSGID.all = (uint32_t)CAN_ID_COMMANDS << 18;
+    ECanaMboxes.MBOX1.MSGID.all = (uint32_t)CAN_ID_IqRef << 18;
 
     // TODO: dont use mbox0 for commands. Those commands should have highest
     // priority of all messages (needed to disable motor in case of some
     // failure), so it should get the highest priority receive mailbox).
+
+    // Clear value of receive mailboxes to avoid false values
+    ECanaMboxes.MBOX0.MDL.all = 0;
+    ECanaMboxes.MBOX0.MDH.all = 0;
+    ECanaMboxes.MBOX1.MDL.all = 0;
+    ECanaMboxes.MBOX1.MDH.all = 0;
 
     // Configure Mailboxes 0-4 for receiving, rest for transmitting
     // Since this write is to the entire register (instead of a bit field) a
