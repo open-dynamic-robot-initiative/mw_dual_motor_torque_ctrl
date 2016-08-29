@@ -63,6 +63,7 @@
 // the defines
 
 #define LED_BLINK_FREQ_Hz   2
+#define CAN_MOTOR_DATA_SEND_FREQ_Hz 500
 
 // **************************************************************************
 // the globals
@@ -199,6 +200,7 @@ _iq gSpeed_hz_to_krpm_sf[2];
 _iq gCurrent_A_to_pu_sf[2];
 
 uint16_t canCnt = 0;
+uint16_t canMotorDataSendCnt[2] = {0, 0};
 
 // **************************************************************************
 // the functions
@@ -618,10 +620,7 @@ void main(void)
 				status.bit.ready_motor2 = !gMotorVars[HAL_MTR2].Flag_enableAlignment;
 
 				CAN_setStatusMsg(status);
-				CAN_setDataMotor1(gMotorVars[HAL_MTR1].Iq_A, st_obj[HAL_MTR1].vel.conv.Pos_mrev, gMotorVars[HAL_MTR1].Speed_krpm);
-				CAN_setDataMotor2(gMotorVars[HAL_MTR2].Iq_A, st_obj[HAL_MTR2].vel.conv.Pos_mrev, gMotorVars[HAL_MTR2].Speed_krpm);
-
-				CAN_send(CAN_MBOX_STATUSMSG | CAN_MBOX_IqPos_mtr1 | CAN_MBOX_IqPos_mtr2 | CAN_MBOX_SPEED_mtr1 | CAN_MBOX_SPEED_mtr2);
+				CAN_send(CAN_MBOX_STATUSMSG);
 			}
 
 			for(mtrNum=HAL_MTR1;mtrNum<=HAL_MTR2;mtrNum++)
@@ -740,6 +739,24 @@ interrupt void motor1_ISR(void)
 	// acknowledge the ADC interrupt
 	HAL_acqAdcInt(halHandle, ADC_IntNumber_1);
 
+	// Send motor data via CAN
+	if(canMotorDataSendCnt[HAL_MTR1]++
+			> (uint_least32_t)(USER_ISR_FREQ_Hz / CAN_MOTOR_DATA_SEND_FREQ_Hz))
+	{
+		canMotorDataSendCnt[HAL_MTR1] = 0;
+		_iq current_iq = _IQmpy(gIdq_pu[HAL_MTR1].value[1],
+				_IQ(gUserParams[HAL_MTR1].iqFullScaleCurrent_A));
+		_iq speed = _IQmpy(
+				STPOSCONV_getVelocityFiltered(st_obj[HAL_MTR1].posConvHandle),
+				gSpeed_pu_to_krpm_sf[HAL_MTR1]);
+		CAN_setDataMotor1(current_iq,
+				st_obj[HAL_MTR1].vel.conv.Pos_mrev,
+				speed);
+		CAN_send(CAN_MBOX_IqPos_mtr1 | CAN_MBOX_SPEED_mtr1);
+		// TODO: is it maybe better to not block here but just initiate
+		// transmission and then wait at the end of the ISR till it is finished?
+	}
+
 	generic_motor_ISR(HAL_MTR1,
 	        _IQ(USER_MOTOR_RES_EST_CURRENT), _IQ(USER_MAX_VS_MAG_PU));
 
@@ -766,6 +783,23 @@ interrupt void motor2_ISR(void)
 
 	// acknowledge the ADC interrupt
 	HAL_acqAdcInt(halHandle, ADC_IntNumber_2);
+
+	// Send motor data via CAN
+	if(canMotorDataSendCnt[HAL_MTR2]++
+			> (uint_least32_t)(USER_ISR_FREQ_Hz_2 / CAN_MOTOR_DATA_SEND_FREQ_Hz))
+	{
+		canMotorDataSendCnt[HAL_MTR2] = 0;
+
+		_iq current_iq = _IQmpy(gIdq_pu[HAL_MTR2].value[1],
+				_IQ(gUserParams[HAL_MTR2].iqFullScaleCurrent_A));
+		_iq speed = _IQmpy(
+				STPOSCONV_getVelocityFiltered(st_obj[HAL_MTR2].posConvHandle),
+				gSpeed_pu_to_krpm_sf[HAL_MTR2]);
+		CAN_setDataMotor2(current_iq,
+				st_obj[HAL_MTR2].vel.conv.Pos_mrev,
+				speed);
+		CAN_send(CAN_MBOX_IqPos_mtr2 | CAN_MBOX_SPEED_mtr2);
+	}
 
 	generic_motor_ISR(HAL_MTR2,
 	        _IQ(USER_MOTOR_RES_EST_CURRENT_2), _IQ(USER_MAX_VS_MAG_PU_2));
@@ -1090,7 +1124,7 @@ interrupt void can1_ISR()
 	// (there shouldn't be any).
 	// Note: ECanaRegs.CANGIF1.bit.MIV1 contains the number of the mailbox that
 	// caused this interrupt (this should always be 0 for now).
-	if (ECanaRegs.CANRMP.bit.RMP0 == 1)
+	if (ECanaRegs.CANRMP.bit.RMP0 == 1) // FIXME: this does not get set anymore!
 	{
 		uint32_t cmd_id = ECanaMboxes.MBOX0.MDH.all;
 		uint32_t cmd_val = ECanaMboxes.MBOX0.MDL.all;

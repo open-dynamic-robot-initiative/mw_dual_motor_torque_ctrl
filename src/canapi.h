@@ -22,12 +22,12 @@ extern "C" {
 // **************************************************************************
 // the defines
 
-#define CAN_MBOX_STATUSMSG  1 << 15
-#define CAN_MBOX_IqPos_mtr1  1 << 14
-#define CAN_MBOX_IqPos_mtr2  1 << 13
-#define CAN_MBOX_SPEED_mtr1  1 << 12
-#define CAN_MBOX_SPEED_mtr2  1 << 11
-#define CAN_MBOX_COMMANDS 0
+#define CAN_MBOX_STATUSMSG  (uint32_t) 1 << 15
+#define CAN_MBOX_IqPos_mtr1  (uint32_t) 1 << 14
+#define CAN_MBOX_IqPos_mtr2  (uint32_t) 1 << 13
+#define CAN_MBOX_SPEED_mtr1  (uint32_t) 1 << 12
+#define CAN_MBOX_SPEED_mtr2  (uint32_t) 1 << 11
+#define CAN_MBOX_COMMANDS (uint32_t) 1 << 0
 
 #define CAN_MBOX_ALL  CAN_MBOX_STATUSMSG \
 	| CAN_MBOX_IqPos_mtr1 \
