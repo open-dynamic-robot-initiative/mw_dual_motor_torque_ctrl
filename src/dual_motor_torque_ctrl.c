@@ -605,30 +605,23 @@ void main(void)
 		{
 			uint_least8_t mtrNum = HAL_MTR1;
 
-			// Write to the mailbox RAM field of MBOX0
-//			ECanaMboxes.MBOX0.MDL.all = (uint32_t)gLEDcnt[0];
-//			ECanaMboxes.MBOX0.MDH.all = (uint32_t)gLEDcnt[1];
-//			ECanaRegs.CANTRS.bit.TRS0 = 1;  // Set TRS for all transmit mailboxes
-//			while(ECanaRegs.CANTA.bit.TA0 != 1);  // Wait for all TAn bits to be set..
-//			ECanaRegs.CANTA.bit.TA0 = 1;   // Clear all TAn
-
-
 			if(canCnt++
 					> (uint_least32_t)(USER_ISR_FREQ_Hz / LED_BLINK_FREQ_Hz))
 			{
 				canCnt = 0;
 				CAN_StatusMsg_t status;
+				status.all = 0;
 				status.bit.enable_system = gMotorVars[HAL_MTR1].Flag_enableSys;
 				status.bit.run_motor1 = gMotorVars[HAL_MTR1].Flag_Run_Identify;
+				status.bit.ready_motor1 = !gMotorVars[HAL_MTR1].Flag_enableAlignment;
 				status.bit.run_motor2 = gMotorVars[HAL_MTR2].Flag_Run_Identify;
-				status.bit.qvalue = 24;
+				status.bit.ready_motor2 = !gMotorVars[HAL_MTR2].Flag_enableAlignment;
 
 				CAN_setStatusMsg(status);
-				CAN_setIq(gMotorVars[HAL_MTR1].Iq_A, gMotorVars[HAL_MTR2].Iq_A);
-				CAN_setPosition(st_obj[HAL_MTR1].vel.conv.Pos_mrev, st_obj[HAL_MTR2].vel.conv.Pos_mrev);
-				CAN_setSpeed(gMotorVars[HAL_MTR1].Speed_krpm, gMotorVars[HAL_MTR2].Speed_krpm);
+				CAN_setDataMotor1(gMotorVars[HAL_MTR1].Iq_A, st_obj[HAL_MTR1].vel.conv.Pos_mrev, gMotorVars[HAL_MTR1].Speed_krpm);
+				CAN_setDataMotor2(gMotorVars[HAL_MTR2].Iq_A, st_obj[HAL_MTR2].vel.conv.Pos_mrev, gMotorVars[HAL_MTR2].Speed_krpm);
 
-				CAN_send(CAN_MBOX_STATUSMSG | CAN_MBOX_Iq | CAN_MBOX_POSITION | CAN_MBOX_SPEED);
+				CAN_send(CAN_MBOX_STATUSMSG | CAN_MBOX_IqPos_mtr1 | CAN_MBOX_IqPos_mtr2 | CAN_MBOX_SPEED_mtr1 | CAN_MBOX_SPEED_mtr2);
 			}
 
 			for(mtrNum=HAL_MTR1;mtrNum<=HAL_MTR2;mtrNum++)

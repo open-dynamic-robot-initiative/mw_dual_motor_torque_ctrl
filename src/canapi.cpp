@@ -164,10 +164,12 @@ void CAN_setupMboxes()
     // Write to the MSGID field of TRANSMIT mailboxes MBOX0 - 15
 //    ECanaMboxes.MBOX1.MSGID.all = 0x9555AAA1;
     ECanaMboxes.MBOX15.MSGID.all = (uint32_t)CAN_ID_STATUSMSG << 18;
-    ECanaMboxes.MBOX14.MSGID.all = (uint32_t)CAN_ID_Iq << 18;
-    ECanaMboxes.MBOX13.MSGID.all = (uint32_t)CAN_ID_POSITION << 18;
-    ECanaMboxes.MBOX12.MSGID.all = (uint32_t)CAN_ID_SPEED << 18;
+    ECanaMboxes.MBOX14.MSGID.all = (uint32_t)CAN_ID_IqPos_mtr1 << 18;
+    ECanaMboxes.MBOX13.MSGID.all = (uint32_t)CAN_ID_IqPos_mtr2 << 18;
+    ECanaMboxes.MBOX12.MSGID.all = (uint32_t)CAN_ID_SPEED_mtr1 << 18;
+    ECanaMboxes.MBOX11.MSGID.all = (uint32_t)CAN_ID_SPEED_mtr2 << 18;
     ECanaMboxes.MBOX0.MSGID.all = (uint32_t)CAN_ID_COMMANDS << 18;
+
     // TODO: dont use mbox0 for commands. Those commands should have highest
     // priority of all messages (needed to disable motor in case of some
     // failure), so it should get the highest priority receive mailbox).
@@ -188,17 +190,17 @@ void CAN_setupMboxes()
 //    ECanaMboxes.MBOX2.MSGCTRL.bit.DLC = 8;
 //    ECanaMboxes.MBOX3.MSGCTRL.bit.DLC = 8;
 //    ECanaMboxes.MBOX4.MSGCTRL.bit.DLC = 8;
-    ECanaMboxes.MBOX5.MSGCTRL.bit.DLC = 8;
-    ECanaMboxes.MBOX6.MSGCTRL.bit.DLC = 8;
-    ECanaMboxes.MBOX7.MSGCTRL.bit.DLC = 8;
-    ECanaMboxes.MBOX8.MSGCTRL.bit.DLC = 8;
-    ECanaMboxes.MBOX9.MSGCTRL.bit.DLC = 8;
-    ECanaMboxes.MBOX10.MSGCTRL.bit.DLC = 8;
-    ECanaMboxes.MBOX11.MSGCTRL.bit.DLC = 8;
-    ECanaMboxes.MBOX12.MSGCTRL.bit.DLC = 8;
+//    ECanaMboxes.MBOX5.MSGCTRL.bit.DLC = 8;
+//    ECanaMboxes.MBOX6.MSGCTRL.bit.DLC = 8;
+//    ECanaMboxes.MBOX7.MSGCTRL.bit.DLC = 8;
+//    ECanaMboxes.MBOX8.MSGCTRL.bit.DLC = 8;
+//    ECanaMboxes.MBOX9.MSGCTRL.bit.DLC = 8;
+//    ECanaMboxes.MBOX10.MSGCTRL.bit.DLC = 8;
+    ECanaMboxes.MBOX11.MSGCTRL.bit.DLC = 4;
+    ECanaMboxes.MBOX12.MSGCTRL.bit.DLC = 4;
     ECanaMboxes.MBOX13.MSGCTRL.bit.DLC = 8;
     ECanaMboxes.MBOX14.MSGCTRL.bit.DLC = 8;
-    ECanaMboxes.MBOX15.MSGCTRL.bit.DLC = 8;
+    ECanaMboxes.MBOX15.MSGCTRL.bit.DLC = 1;
 
 
     // setup interrupts

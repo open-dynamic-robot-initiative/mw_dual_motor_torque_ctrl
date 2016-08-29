@@ -23,36 +23,45 @@ extern "C" {
 // the defines
 
 #define CAN_MBOX_STATUSMSG  1 << 15
-#define CAN_MBOX_Iq  1 << 14
-#define CAN_MBOX_POSITION  1 << 13
-#define CAN_MBOX_SPEED  1 << 12
+#define CAN_MBOX_IqPos_mtr1  1 << 14
+#define CAN_MBOX_IqPos_mtr2  1 << 13
+#define CAN_MBOX_SPEED_mtr1  1 << 12
+#define CAN_MBOX_SPEED_mtr2  1 << 11
 #define CAN_MBOX_COMMANDS 0
 
-#define CAN_MBOX_ALL  0x0000F001
+#define CAN_MBOX_ALL  CAN_MBOX_STATUSMSG \
+	| CAN_MBOX_IqPos_mtr1 \
+	| CAN_MBOX_IqPos_mtr2 \
+	| CAN_MBOX_SPEED_mtr1 \
+	| CAN_MBOX_SPEED_mtr2 \
+	| CAN_MBOX_COMMANDS
 
 
 #define CAN_ID_COMMANDS 0
-#define CAN_ID_STATUSMSG  100
-#define CAN_ID_Iq  101
-#define CAN_ID_POSITION  102
-#define CAN_ID_SPEED  103
+#define CAN_ID_STATUSMSG  0x10
+#define CAN_ID_IqPos_mtr1  0x21
+#define CAN_ID_IqPos_mtr2  0x22
+#define CAN_ID_SPEED_mtr1  0x31
+#define CAN_ID_SPEED_mtr2  0x32
 
 
 // **************************************************************************
 // the typedefs
 
-struct CAN_STATUSMSG_BITS {          // bits   description
-   uint32_t enable_system:1;     // 0
-   uint32_t run_motor1:1;        // 1
-   uint32_t run_motor2:1;        // 2
-   uint32_t motor1_temp_alert:1; // 3
-   uint32_t motor2_temp_alert:1; // 4
-   uint32_t qvalue:5;            // 5:9
-   uint32_t rsvd:22;             // 10:31   reserved
+struct CAN_STATUSMSG_BITS {      // bits   description
+   uint16_t enable_system:1;     // 0
+   uint16_t run_motor1:1;        // 1
+   uint16_t ready_motor1:1;      // 2
+   uint16_t run_motor2:1;        // 3
+   uint16_t ready_motor2:1;      // 4
+   uint16_t motor1_temp_alert:1; // 5
+   uint16_t motor2_temp_alert:1; // 6
+   uint16_t system_error:1;      // 7
+   uint16_t rsvd:8;              // 8-15  reserved
 };
 
 typedef union _CAN_StatusMsg_t_ {
-   uint32_t              all;
+   uint16_t              all;
    struct CAN_STATUSMSG_BITS  bit;
 } CAN_StatusMsg_t;
 
@@ -72,35 +81,27 @@ extern void CAN_setupMboxes();
 
 inline void CAN_setStatusMsg(CAN_StatusMsg_t statusmsg)
 {
-	ECanaMboxes.MBOX15.MDL.all = statusmsg.all;
-	// TODO: dont send full 8 bytes but only what is actually used.
+	ECanaMboxes.MBOX15.MDL.byte.BYTE0 = statusmsg.all;
 
 	return;
 }
 
 
-inline void CAN_setIq(_iq Iq_mtr1, _iq Iq_mtr2)
+inline void CAN_setDataMotor1(_iq current_iq, _iq encoder_position, _iq velocity)
 {
-	ECanaMboxes.MBOX14.MDL.all = (uint32_t)Iq_mtr1;
-	ECanaMboxes.MBOX14.MDH.all = (uint32_t)Iq_mtr2;
+	ECanaMboxes.MBOX14.MDL.all = current_iq;
+	ECanaMboxes.MBOX14.MDH.all = encoder_position;
+	ECanaMboxes.MBOX12.MDL.all = velocity;
 
 	return;
 }
 
 
-inline void CAN_setPosition(_iq pos_mtr1, _iq pos_mtr2)
+inline void CAN_setDataMotor2(_iq current_iq, _iq encoder_position, _iq velocity)
 {
-	ECanaMboxes.MBOX13.MDL.all = (uint32_t)pos_mtr1;
-	ECanaMboxes.MBOX13.MDH.all = (uint32_t)pos_mtr2;
-
-	return;
-}
-
-
-inline void CAN_setSpeed(_iq speed_mtr1, _iq speed_mtr2)
-{
-	ECanaMboxes.MBOX12.MDL.all = (uint32_t)speed_mtr1;
-	ECanaMboxes.MBOX12.MDH.all = (uint32_t)speed_mtr2;
+	ECanaMboxes.MBOX13.MDL.all = current_iq;
+	ECanaMboxes.MBOX13.MDH.all = encoder_position;
+	ECanaMboxes.MBOX11.MDL.all = velocity;
 
 	return;
 }
