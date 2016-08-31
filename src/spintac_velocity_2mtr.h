@@ -258,13 +258,13 @@ inline ST_Handle ST_init(void *pMemory, const size_t numBytes)
 	obj = (ST_Obj *)handle;		// assign the object
 
 	// init the ST VelId object
-	obj->velIdHandle = STVELID_init(&obj->vel.id, sizeof(ST_VelId_t));
+	//obj->velIdHandle = STVELID_init(&obj->vel.id, sizeof(ST_VelId_t));
 	// init the ST VelCtl object
-	obj->velCtlHandle = STVELCTL_init(&obj->vel.ctl, sizeof(ST_VelCtl_t));
+	//obj->velCtlHandle = STVELCTL_init(&obj->vel.ctl, sizeof(ST_VelCtl_t));
 	// init the ST VelMove object
-	obj->velMoveHandle = STVELMOVE_init(&obj->vel.move, sizeof(ST_VelMove_t));
+	//obj->velMoveHandle = STVELMOVE_init(&obj->vel.move, sizeof(ST_VelMove_t));
 	// init the ST VelPlan object
-	obj->velPlanHandle = STVELPLAN_init(&obj->vel.plan, sizeof(ST_VelPlan_t));
+	//obj->velPlanHandle = STVELPLAN_init(&obj->vel.plan, sizeof(ST_VelPlan_t));
 	// init the ST PosConv object
 	obj->posConvHandle = STPOSCONV_init(&obj->vel.conv, sizeof(ST_PosConv_t));
 	// get the ST Version object
@@ -310,138 +310,13 @@ inline void ST_setupPosConv_mtr2(ST_Handle handle) {
 	STPOSCONV_setEnable(obj->posConvHandle, true);
 }
 
-//! \brief      Setups SpinTAC Velocity Control
-inline void ST_setupVelCtl_mtr1(ST_Handle handle) {
-
-	// get object from the handle
-	ST_Obj *obj = (ST_Obj *)handle;
-	_iq24 maxCurrent_PU = _IQ24(USER_MOTOR_MAX_CURRENT / USER_IQ_FULL_SCALE_CURRENT_A);
-
-	// Initalize SpinTAC Position Control
-	STVELCTL_setAxis(obj->velCtlHandle, ST_AXIS0);
-	STVELCTL_setSampleTime_sec(obj->velCtlHandle, _IQ24(ST_SAMPLE_TIME));
-	STVELCTL_setOutputMaximums(obj->velCtlHandle, maxCurrent_PU, -maxCurrent_PU);
-	STVELCTL_setInertia(obj->velCtlHandle, _IQ24(ST_SYSTEM_INERTIA_PU));
-	STVELCTL_setFriction(obj->velCtlHandle, _IQ24(ST_SYSTEM_FRICTION_PU));
-	STVELCTL_setBandwidth_radps(obj->velCtlHandle, _IQ20(USER_SYSTEM_BANDWIDTH));
-	STVELCTL_setEnable(obj->velCtlHandle, false);
-}
-
-inline void ST_setupVelCtl_mtr2(ST_Handle handle) {
-
-	// get object from the handle
-	ST_Obj *obj = (ST_Obj *)handle;
-	_iq24 maxCurrent_PU = _IQ24(USER_MOTOR_MAX_CURRENT_2 / USER_IQ_FULL_SCALE_CURRENT_A_2);
-
-	// Initalize SpinTAC Position Control
-	STVELCTL_setAxis(obj->velCtlHandle, ST_AXIS1);
-	STVELCTL_setSampleTime_sec(obj->velCtlHandle, _IQ24(ST_SAMPLE_TIME_2));
-	STVELCTL_setOutputMaximums(obj->velCtlHandle, maxCurrent_PU, -maxCurrent_PU);
-	STVELCTL_setInertia(obj->velCtlHandle, _IQ24(ST_SYSTEM_INERTIA_PU_2));
-	STVELCTL_setFriction(obj->velCtlHandle, _IQ24(ST_SYSTEM_FRICTION_PU_2));
-	STVELCTL_setBandwidth_radps(obj->velCtlHandle, _IQ20(USER_SYSTEM_BANDWIDTH_2));
-	STVELCTL_setEnable(obj->velCtlHandle, false);
-}
-
-//! \brief      Setups SpinTAC Velocity Move
-inline void ST_setupVelMove_mtr1(ST_Handle handle) {
-
-	// get object from the handle
-	ST_Obj *obj = (ST_Obj *)handle;
-
-	// Initalize SpinTAC Velocity Move
-	STVELMOVE_setAxis(obj->velMoveHandle, ST_AXIS0);
-	STVELMOVE_setSampleTime_sec(obj->velMoveHandle, _IQ24(ST_SAMPLE_TIME));
-	STVELMOVE_setAccelerationLimit(obj->velMoveHandle, _IQ24(0.4));
-	STVELMOVE_setJerkLimit(obj->velMoveHandle, _IQ20(1.0));
-	STVELMOVE_setCurveType(obj->velMoveHandle, ST_MOVE_CUR_STCRV);
-	STVELMOVE_setTest(obj->velMoveHandle, false);
-	STVELMOVE_setEnable(obj->velMoveHandle, false);
-}
-
-inline void ST_setupVelMove_mtr2(ST_Handle handle) {
-
-	// get object from the handle
-	ST_Obj *obj = (ST_Obj *)handle;
-
-	// Initalize SpinTAC Velocity Move
-	STVELMOVE_setAxis(obj->velMoveHandle, ST_AXIS1);
-	STVELMOVE_setSampleTime_sec(obj->velMoveHandle, _IQ24(ST_SAMPLE_TIME_2));
-	STVELMOVE_setAccelerationLimit(obj->velMoveHandle, _IQ24(0.4));
-	STVELMOVE_setJerkLimit(obj->velMoveHandle, _IQ20(1.0));
-	STVELMOVE_setCurveType(obj->velMoveHandle, ST_MOVE_CUR_STCRV);
-	STVELMOVE_setTest(obj->velMoveHandle, false);
-	STVELMOVE_setEnable(obj->velMoveHandle, false);
-}
-
-//! \brief      Setups SpinTAC Velocity Plan
-extern void ST_setupVelPlan_mtr1(ST_Handle);
-extern void ST_setupVelPlan_mtr2(ST_Handle);
-
-//! \brief      Setups SpinTAC Velocity Identify
-inline void ST_setupVelId_mtr1(ST_Handle handle) {
-
-	// get object from the handle
-	ST_Obj *obj = (ST_Obj *)handle;
-	_iq24 maxCurrent_PU = _IQ24(USER_MOTOR_MAX_CURRENT / USER_IQ_FULL_SCALE_CURRENT_A);
-
-	// Initalize ST_VEL_ID
-	STVELID_setSampleTime_sec(obj->velIdHandle, _IQ24(ST_SAMPLE_TIME));
-	STVELID_setOutputMaximum(obj->velIdHandle, maxCurrent_PU);
-	STVELID_setGoalSpeed(obj->velIdHandle, _IQ24(0.5 * USER_MOTOR_MAX_SPEED_KRPM * ST_SPEED_PU_PER_KRPM));
-	STVELID_setLowPassFilterTime_tick(obj->velIdHandle, 1);
-	STVELID_setTimeOut_sec(obj->velIdHandle, _IQ24(10.0));
-	STVELID_setTorqueRampTime_sec(obj->velIdHandle, _IQ24(5.0));
-	STVELID_setEnable(obj->velIdHandle, false);
-}
-
-inline void ST_setupVelId_mtr2(ST_Handle handle) {
-
-	// get object from the handle
-	ST_Obj *obj = (ST_Obj *)handle;
-	_iq24 maxCurrent_PU = _IQ24(USER_MOTOR_MAX_CURRENT_2 / USER_IQ_FULL_SCALE_CURRENT_A_2);
-
-	// Initalize ST_VEL_ID
-	STVELID_setSampleTime_sec(obj->velIdHandle, _IQ24(ST_SAMPLE_TIME_2));
-	STVELID_setOutputMaximum(obj->velIdHandle, maxCurrent_PU);
-	STVELID_setGoalSpeed(obj->velIdHandle, _IQ24(0.5 * USER_MOTOR_MAX_SPEED_KRPM_2 * ST_SPEED_PU_PER_KRPM_2));
-	STVELID_setLowPassFilterTime_tick(obj->velIdHandle, 1);
-	STVELID_setTimeOut_sec(obj->velIdHandle, _IQ24(10.0));
-	STVELID_setTorqueRampTime_sec(obj->velIdHandle, _IQ24(5.0));
-	STVELID_setEnable(obj->velIdHandle, false);
-}
 
 #ifdef QEP
 //! \brief      Runs SpinTAC Positon Convert
 extern void ST_runPosConv(ST_Handle handle, ENC_Handle encHandle, SLIP_Handle slipHandle, MATH_vec2 *Idq_pu, MOTOR_Type_e motorType);
 #endif
 
-//! \brief      Runs SpinTAC Velocity Control
-extern _iq ST_runVelCtl(ST_Handle, _iq);
 
-//! \brief      Runs SpinTAC Velocity Move
-extern void ST_runVelMove(ST_Handle handle, EST_Handle estHandle, bool *pFlag_enableForceAngle);
-
-//! \brief      Runs SpinTAC Velocity Plan
-extern void ST_runVelPlan(ST_Handle, EST_Handle);
-
-//! \brief      Runs the time-critical components of SpinTAC Velocity Plan
-inline void ST_runVelPlanTick(ST_Handle handle) {
-	ST_Obj *stObj = (ST_Obj *)handle;
-
-	// Update the SpinTAC Position Plan Timer
-	STVELPLAN_runTick(stObj->velPlanHandle);
-	// Update Plan when the profile is completed
-	if(STVELMOVE_getStatus(stObj->velMoveHandle) == ST_MOVE_IDLE) {
-		STVELPLAN_setUnitProfDone(stObj->velPlanHandle, true);
-	}
-	else {
-		STVELPLAN_setUnitProfDone(stObj->velPlanHandle, false);
-	}
-}
-
-//! \brief      Runs SpinTAC Velocity Identify
-extern void ST_runVelId(ST_Handle, _iq);
 
 #ifdef __cplusplus
 }

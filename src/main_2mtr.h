@@ -309,20 +309,7 @@ interrupt void can1_ISR();
 
 void pidSetup(HAL_MtrSelect_e mtrNum);
 
-
-void runCurrentIgnore(void);
-
-
-void runCurrentReconstruction(void);
-
-
-void runFieldWeakening(void);
-
-
 void runOffsetsCalculation(HAL_MtrSelect_e mtrNum);
-
-
-void runSetTrigger(void);
 
 
 //! \brief Updates the global variables
@@ -333,62 +320,6 @@ void updateGlobalVariables(EST_Handle handle, const uint_least8_t mtrNum);
 //! \brief Updates version 1p6 of library
 //!
 void softwareUpdate1p6(EST_Handle handle, USER_Params *pUserParams);
-
-
-//! \brief Reset Ls Q format to a higher value when Ls identification starts
-//!
-void CTRL_resetLs_qFmt(CTRL_Handle handle, const uint_least8_t qFmt);
-
-
-//! \brief Recalculate Kp and Ki gains to fix the R/L limitation of 2000.0 and
-//! \brief Kp limitation of 0.11 as well as recalculates gains based on
-//! \brief estimator state to allow low inductance pmsm to id.
-//!
-void recalcKpKiPmsm(CTRL_Handle handle);
-
-
-//! \brief Recalculate Kp and Ki gains to fix the R/L limitation of 2000.0 and
-//! \brief Kp limitation of 0.11.
-//!
-void recalcKpKi(CTRL_Handle handle);
-
-
-//! \brief Calculates the maximum qFmt value for Ls identification, to get a
-//! \brief more accurate Ls per unit.
-//!
-void CTRL_calcMax_Ls_qFmt(CTRL_Handle handle, uint_least8_t *p_qFmt);
-
-
-//! \brief Updates Iq reference and also sets the right sign to the speed
-//! \brief reference for correct force angle.
-//!
-void updateIqRef(CTRL_Handle handle, const uint_least8_t mtrNum);
-
-
-//! \brief Updates Kp and Ki gains in the controller object
-//!
-void updateKpKiGains(CTRL_Handle handle);
-
-
-//! \brief Runs Rs online
-//!
-void runRsOnLine(CTRL_Handle handle);
-
-
-//! \brief Updates CPU usage
-//!
-void updateCPUusage(void);
-
-
-//! \brief Set electrical frequency limit to zero while identifying an
-//! \brief induction motor
-//!
-void setFeLimitZero(CTRL_Handle handle);
-
-
-//! \brief Calculates Dir_qFmt for ACIM
-//!
-void acim_Dir_qFmtCalc(CTRL_Handle handle);
 
 
 //! \brief     Sets up the Clarke transform for current
@@ -419,11 +350,8 @@ EST_Handle EST_init(void *pMemory, const size_t numBytes);
 //! \return    The target value for the Id trajectory in pu
 _iq EST_runPowerWarp(EST_Handle handle, const _iq Id_int_pu, const _iq Iq_pu);
 
-_iq getAbsElecAngle(const _iq angle_pu);
 
-_iq getAbsMechAngle(
-        _iq *pAngle_mech_poles, _iq *pAngle_z1_pu, const _iq angle_pu);
-
+//! \brief Motor ISR that can be used for both motors.
 void generic_motor_ISR(
         const HAL_MtrSelect_e mtrNum,
         const _iq user_motor_res_est_current,

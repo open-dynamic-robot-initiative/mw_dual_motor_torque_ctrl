@@ -462,10 +462,6 @@ void main(void)
 	// setup the SpinTAC Components
 	ST_setupPosConv_mtr1(stHandle[HAL_MTR1]);
 	ST_setupPosConv_mtr2(stHandle[HAL_MTR2]);
-	ST_setupVelCtl_mtr1(stHandle[HAL_MTR1]);
-	ST_setupVelMove_mtr1(stHandle[HAL_MTR1]);
-	ST_setupVelCtl_mtr2(stHandle[HAL_MTR2]);
-	ST_setupVelMove_mtr2(stHandle[HAL_MTR2]);
 
 	// set the pre-determined current and voltage feeback offset values
 	gOffsets_I_pu[HAL_MTR1].value[0] = _IQ(I_A_offset);
@@ -1437,73 +1433,6 @@ void ST_runPosConv(
 		        slipHandle, STPOSCONV_getSlipVelocity(stObj->posConvHandle));
 	}
 }
-
-void ST_runVelMove(
-        ST_Handle handle,
-        EST_Handle estHandle,
-        bool *pFlag_enableForceAngle)
-{
-	ST_Obj *stObj = (ST_Obj *)handle;
-
-	// Run SpinTAC Move
-	// If we are not in reset, and the speed reference matches the end point
-	// has been modified
-	if(STVELMOVE_getVelocityReference(stObj->velMoveHandle)
-			!= STVELMOVE_getVelocityEnd(stObj->velMoveHandle))
-	{
-		// Enable SpinTAC Move
-		STVELMOVE_setEnable(stObj->velMoveHandle, true);
-	}
-	STVELMOVE_run(stObj->velMoveHandle);
-}
-
-
-_iq ST_runVelCtl(ST_Handle handle, _iq speedFeedback)
-{
-	_iq iqReference;
-	ST_Obj *stObj = (ST_Obj *)handle;
-
-	// Run SpinTAC Velocity Control
-	STVELCTL_setVelocityReference(stObj->velCtlHandle,
-			STVELMOVE_getVelocityReference(stObj->velMoveHandle));
-	STVELCTL_setAccelerationReference(stObj->velCtlHandle,
-			STVELMOVE_getAccelerationReference(stObj->velMoveHandle));
-	STVELCTL_setVelocityFeedback(stObj->velCtlHandle, speedFeedback);
-	STVELCTL_run(stObj->velCtlHandle);
-
-	// Get SpinTAC Velocity Control torque reference
-	iqReference = STVELCTL_getTorqueReference(stObj->velCtlHandle);
-
-	return iqReference;
-}
-
-
-// TODO: this does not fit directly to this lab
-void updateIqRef(CTRL_Handle handle, const uint_least8_t mtrNum)
-{
-//    _iq iq_ref = _IQmpy(
-//            gMotorVars[mtrNum].IqRef_A,
-//            _IQ(1.0 / USER_IQ_FULL_SCALE_CURRENT_A));
-//
-//    // set the speed reference so that the forced angle rotates in the correct
-//    // direction for startup
-//    if(_IQabs(gMotorVars[mtrNum].Speed_krpm) < _IQ(0.01))
-//    {
-//        if(iq_ref < _IQ(0.0))
-//        {
-//            CTRL_setSpd_ref_krpm(handle, _IQ(-0.01));
-//        }
-//        else if(iq_ref > _IQ(0.0))
-//        {
-//            CTRL_setSpd_ref_krpm(handle, _IQ(0.01));
-//        }
-//    }
-//
-//    // Set the Iq reference for the controller
-//    gIdq_ref_pu[mtrNum].value[1] = iq_ref;
-
-    return;
-} // end of updateIqRef() function
 
 
 void sendStatusViaCAN()
