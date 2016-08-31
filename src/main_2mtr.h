@@ -430,5 +430,12 @@ void generic_motor_ISR(
         const _iq user_max_vs_mag_pu);
 
 
+//! \brief Send the current status of the board via CAN
+inline void sendStatusViaCAN();
+
+//! \brief Send data (current, position, etc.) of the specified motor via CAN
+void sendMotorDataViaCAN(const HAL_MtrSelect_e mtrNum);
+
+
 //@} //defgroup
 #endif // end of _MAIN_H_ definition

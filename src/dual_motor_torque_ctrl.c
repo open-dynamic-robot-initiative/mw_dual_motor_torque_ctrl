@@ -63,7 +63,7 @@
 // the defines
 
 #define LED_BLINK_FREQ_Hz   2
-#define CAN_MOTOR_DATA_SEND_FREQ_Hz 500
+#define CAN_MOTOR_DATA_SEND_FREQ_Hz 1000
 
 // **************************************************************************
 // the globals
@@ -548,38 +548,8 @@ void main(void)
 
 
 	// Setup CAN interface
-
-	/*
-	// Set CANTX and CANRX pins to CAN functions (don't know what this means...)
-	ECanaRegs.CANTIOC.bit.TXFUNC = 1;
-	ECanaRegs.CANRIOC.bit.RXFUNC = 1;
-
-	// set initialization mode
-	ECanaRegs.CANMC.bit.CCR = 1;
-	// wait for CCE to become 1
-	while (ECanaRegs.CANES.bit.CCE == 0);
-
-	// Disable mailbox for configuration
-	ECanaRegs.CANME.bit.ME0 = 0;
-
-	ECanaRegs.CANTRR.bit.TRR0 = 0;
-	while(ECanaRegs.CANTRS.bit.TRS0 != 0);
-
-
-
-
-	// Enable mailbox
-	ECanaRegs.CANME.bit.ME0 = 1;
-
-
-	// back to normal mode
-	ECanaRegs.CANMC.bit.CCR = 0;
-	// wait for CCE to become 0
-	while (ECanaRegs.CANES.bit.CCE == 1);
-	*/
-
-	InitECanaGpio(halHandle);
-	InitECana();
+	CAN_initECanaGpio(halHandle);
+	CAN_initECana();
 	CAN_setupMboxes();
 
 	{ // Set ISR for CAN interrupt
@@ -607,21 +577,9 @@ void main(void)
 		{
 			uint_least8_t mtrNum = HAL_MTR1;
 
-			if(canCnt++
-					> (uint_least32_t)(USER_ISR_FREQ_Hz / LED_BLINK_FREQ_Hz))
-			{
-				canCnt = 0;
-				CAN_StatusMsg_t status;
-				status.all = 0;
-				status.bit.enable_system = gMotorVars[HAL_MTR1].Flag_enableSys;
-				status.bit.run_motor1 = gMotorVars[HAL_MTR1].Flag_Run_Identify;
-				status.bit.ready_motor1 = !gMotorVars[HAL_MTR1].Flag_enableAlignment;
-				status.bit.run_motor2 = gMotorVars[HAL_MTR2].Flag_Run_Identify;
-				status.bit.ready_motor2 = !gMotorVars[HAL_MTR2].Flag_enableAlignment;
-
-				CAN_setStatusMsg(status);
-				CAN_send(CAN_MBOX_OUT_STATUSMSG);
-			}
+			// Send status message via CAN.  This is not timing critical so it
+			// can be done here in the background loop.
+			sendStatusViaCAN();
 
 			for(mtrNum=HAL_MTR1;mtrNum<=HAL_MTR2;mtrNum++)
 			{
@@ -744,17 +702,7 @@ interrupt void motor1_ISR(void)
 			> (uint_least32_t)(USER_ISR_FREQ_Hz / CAN_MOTOR_DATA_SEND_FREQ_Hz))
 	{
 		canMotorDataSendCnt[HAL_MTR1] = 0;
-		_iq current_iq = _IQmpy(gIdq_pu[HAL_MTR1].value[1],
-				_IQ(gUserParams[HAL_MTR1].iqFullScaleCurrent_A));
-		_iq speed = _IQmpy(
-				STPOSCONV_getVelocityFiltered(st_obj[HAL_MTR1].posConvHandle),
-				gSpeed_pu_to_krpm_sf[HAL_MTR1]);
-		CAN_setDataMotor1(current_iq,
-				st_obj[HAL_MTR1].vel.conv.Pos_mrev,
-				speed);
-		CAN_send(CAN_MBOX_OUT_IqPos_mtr1 | CAN_MBOX_OUT_SPEED_mtr1);
-		// TODO: is it maybe better to not block here but just initiate
-		// transmission and then wait at the end of the ISR till it is finished?
+		sendMotorDataViaCAN(HAL_MTR1);
 	}
 
 	generic_motor_ISR(HAL_MTR1,
@@ -764,9 +712,6 @@ interrupt void motor1_ISR(void)
 
 	return;
 } // end of motor1_ISR() function
-
-
-
 
 
 interrupt void motor2_ISR(void)
@@ -789,16 +734,7 @@ interrupt void motor2_ISR(void)
 			> (uint_least32_t)(USER_ISR_FREQ_Hz_2 / CAN_MOTOR_DATA_SEND_FREQ_Hz))
 	{
 		canMotorDataSendCnt[HAL_MTR2] = 0;
-
-		_iq current_iq = _IQmpy(gIdq_pu[HAL_MTR2].value[1],
-				_IQ(gUserParams[HAL_MTR2].iqFullScaleCurrent_A));
-		_iq speed = _IQmpy(
-				STPOSCONV_getVelocityFiltered(st_obj[HAL_MTR2].posConvHandle),
-				gSpeed_pu_to_krpm_sf[HAL_MTR2]);
-		CAN_setDataMotor2(current_iq,
-				st_obj[HAL_MTR2].vel.conv.Pos_mrev,
-				speed);
-		CAN_send(CAN_MBOX_OUT_IqPos_mtr2 | CAN_MBOX_OUT_SPEED_mtr2);
+		sendMotorDataViaCAN(HAL_MTR2);
 	}
 
 	generic_motor_ISR(HAL_MTR2,
@@ -1568,6 +1504,51 @@ void updateIqRef(CTRL_Handle handle, const uint_least8_t mtrNum)
 
     return;
 } // end of updateIqRef() function
+
+
+void sendStatusViaCAN()
+{
+	CAN_StatusMsg_t status;
+
+	// Send status message via CAN
+	status.all = 0;
+	status.bit.enable_system = gMotorVars[HAL_MTR1].Flag_enableSys;
+	status.bit.run_motor1 = gMotorVars[HAL_MTR1].Flag_Run_Identify;
+	status.bit.ready_motor1 = !gMotorVars[HAL_MTR1].Flag_enableAlignment;
+	status.bit.run_motor2 = gMotorVars[HAL_MTR2].Flag_Run_Identify;
+	status.bit.ready_motor2 = !gMotorVars[HAL_MTR2].Flag_enableAlignment;
+	CAN_setStatusMsg(status);
+	CAN_send(CAN_MBOX_OUT_STATUSMSG);
+
+	return;
+}
+
+
+void sendMotorDataViaCAN(const HAL_MtrSelect_e mtrNum)
+{
+	_iq current_iq = _IQmpy(gIdq_pu[mtrNum].value[1],
+			_IQ(gUserParams[mtrNum].iqFullScaleCurrent_A));
+	_iq position = st_obj[mtrNum].vel.conv.Pos_mrev;
+	_iq speed = _IQmpy(
+			STPOSCONV_getVelocityFiltered(st_obj[mtrNum].posConvHandle),
+			gSpeed_pu_to_krpm_sf[mtrNum]);
+
+	if (mtrNum == HAL_MTR1)
+	{
+		CAN_setDataMotor1(current_iq, position, speed);
+		CAN_send(CAN_MBOX_OUT_IqPos_mtr1 | CAN_MBOX_OUT_SPEED_mtr1);
+	}
+	else
+	{
+		CAN_setDataMotor2(current_iq, position, speed);
+		CAN_send(CAN_MBOX_OUT_IqPos_mtr2 | CAN_MBOX_OUT_SPEED_mtr2);
+	}
+
+	// TODO: is it maybe better to not block here but just initiate
+	// transmission and then wait at the end of the ISR till it is finished?
+
+	return;
+}
 
 
 //@} //defgroup
