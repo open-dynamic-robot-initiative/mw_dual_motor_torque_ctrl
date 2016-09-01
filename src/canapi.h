@@ -142,10 +142,17 @@ inline void CAN_setDataMotor2(_iq current_iq, _iq encoder_position, _iq velocity
 //! \param mailboxes  A bitmap specifying the mailboxes to be send.
 inline void CAN_send(uint32_t mailboxes)
 {
-	ECanaRegs.CANTRS.all |= mailboxes;  // Set TRS for all specified mailboxes
-	while (ECanaRegs.CANTA.all & mailboxes != mailboxes);  // Wait for all TAn bits of specified mailboxes to be set..
-	ECanaRegs.CANTA.all = mailboxes;   // Clear all TAn (we have to set it to 1 so it becomes 0...)
-	while (ECanaRegs.CANTA.all & mailboxes != 0); // wait for all TAn bits to become zero
+	// Always access whole register, not bitfield.  Therefore no shadow register
+	// should be necessary.
+
+	// Set TRS for all specified mailboxes
+	ECanaRegs.CANTRS.all |= mailboxes;
+	// Wait for all TAn bits of specified mailboxes to be set
+//	while ((ECanaRegs.CANTA.all & mailboxes) != mailboxes);
+//	// Clear all TAn (we have to set it to 1 so it becomes 0...)
+//	ECanaRegs.CANTA.all = mailboxes;
+//	// wait for all TAn bits to become zero
+//	while ((ECanaRegs.CANTA.all & mailboxes) != 0);
 
 	return;
 }
