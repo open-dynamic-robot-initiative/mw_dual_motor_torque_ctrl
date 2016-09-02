@@ -152,11 +152,6 @@
 			<locationURI>MW_INSTALL_DIR/sw/drivers/drvic/drv8305/src/32b/f28x/f2806x/drv8305.c</locationURI>
 		</link>
 		<link>
-			<name>src</name>
-			<type>2</type>
-			<locationURI>PARENT-1-PROJECT_LOC/src</locationURI>
-		</link>
-		<link>
 			<name>enc.c</name>
 			<type>1</type>
 			<locationURI>MW_INSTALL_DIR/sw/modules/enc/src/32b/enc.c</locationURI>
@@ -240,6 +235,11 @@
 			<name>spi.c</name>
 			<type>1</type>
 			<locationURI>MW_INSTALL_DIR/sw/drivers/spi/src/32b/f28x/f2806x/spi.c</locationURI>
+		</link>
+		<link>
+			<name>src</name>
+			<type>2</type>
+			<locationURI>PARENT-1-PROJECT_LOC/src</locationURI>
 		</link>
 		<link>
 			<name>svgen.c</name>

@@ -1,4 +1,11 @@
 eclipse.preferences.version=1
+encoding//Flash/makefile=UTF-8
+encoding//Flash/objects.mk=UTF-8
+encoding//Flash/sources.mk=UTF-8
+encoding//Flash/src/subdir_rules.mk=UTF-8
+encoding//Flash/src/subdir_vars.mk=UTF-8
+encoding//Flash/subdir_rules.mk=UTF-8
+encoding//Flash/subdir_vars.mk=UTF-8
 encoding//Release/dual_motor_torque_ctrl/subdir_rules.mk=UTF-8
 encoding//Release/dual_motor_torque_ctrl/subdir_vars.mk=UTF-8
 encoding//Release/dual_motor_vel_ctrl/subdir_rules.mk=UTF-8
