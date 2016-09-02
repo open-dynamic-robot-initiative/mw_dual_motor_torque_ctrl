@@ -205,6 +205,7 @@ _iq gCurrent_A_to_pu_sf[2];
 
 uint16_t canCnt = 0;
 uint16_t canMotorDataSendCnt[2] = {0, 0};
+//uint32_t seq_counter = 0;
 
 // **************************************************************************
 // the functions
