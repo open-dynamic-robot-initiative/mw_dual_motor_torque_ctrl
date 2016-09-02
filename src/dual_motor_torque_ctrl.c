@@ -63,7 +63,9 @@
 // the defines
 
 #define LED_BLINK_FREQ_Hz   2
-#define CAN_MOTOR_DATA_SEND_FREQ_Hz 1000
+
+#define CAN_TRANSMISSION_TIMER_FREQ_Hz 1000
+#define CAN_STATUS_DECIMATION 1000
 
 // **************************************************************************
 // the globals
@@ -163,6 +165,8 @@ VIRTUALSPRING_Obj spring[2];
 
 uint16_t gLEDcnt[2] = {0, 0};
 
+uint16_t gCanTransStatusCnt = 0;
+
 volatile MOTOR_Vars_t gMotorVars[2] = {MOTOR_Vars_INIT_Mtr1, MOTOR_Vars_INIT_Mtr2};   //!< the global motor
 //!< variables that are defined in main.h and
 //!< used for display in the debugger's watch
@@ -258,6 +262,9 @@ void main(void)
 	// GPIO 50-55 and 56-58 (covering eQEP2)
 	GPIO_setQualificationPeriod(hal.gpioHandle, GPIO_Number_50, 11); //GPIO50-55
 	GPIO_setQualificationPeriod(hal.gpioHandle, GPIO_Number_56, 11); //GPIO56-58
+
+	// Overwrite the settings for timer0 (we want it faster)
+	overwriteSetupTimer0(halHandle, CAN_TRANSMISSION_TIMER_FREQ_Hz);
 
 	// initialize the estimator
 	estHandle[HAL_MTR1] = EST_init((void *)USER_EST_HANDLE_ADDRESS, 0x200);
@@ -490,6 +497,16 @@ void main(void)
 	// enable debug interrupts
 	HAL_enableDebugInt(halHandle);
 
+	// enable the Timer 0 interrupts
+	HAL_enableTimer0Int(halHandle);
+	{   // define ISR function
+		// TODO: move this to a function
+		PIE_Obj *pie = (PIE_Obj *)hal.pieHandle;
+		ENABLE_PROTECTED_REGISTER_WRITE_MODE;
+		pie->TINT0 = &timer0_ISR;
+		DISABLE_PROTECTED_REGISTER_WRITE_MODE;
+	}
+
 	// disable the PWM
 	HAL_disablePwm(halHandleMtr[HAL_MTR1]);
 	HAL_disablePwm(halHandleMtr[HAL_MTR2]);
@@ -572,10 +589,6 @@ void main(void)
 		while(gMotorVars[HAL_MTR1].Flag_enableSys)
 		{
 			uint_least8_t mtrNum = HAL_MTR1;
-
-			// Send status message via CAN.  This is not timing critical so it
-			// can be done here in the background loop.
-			sendStatusViaCAN();
 
 			for(mtrNum=HAL_MTR1;mtrNum<=HAL_MTR2;mtrNum++)
 			{
@@ -724,14 +737,6 @@ interrupt void motor2_ISR(void)
 
 	// acknowledge the ADC interrupt
 	HAL_acqAdcInt(halHandle, ADC_IntNumber_2);
-
-	// Send motor data via CAN
-	if(canMotorDataSendCnt[HAL_MTR2]++
-			> (uint_least32_t)(USER_ISR_FREQ_Hz_2 / CAN_MOTOR_DATA_SEND_FREQ_Hz))
-	{
-		canMotorDataSendCnt[HAL_MTR2] = 0;
-		sendMotorDataViaCAN(HAL_MTR2);
-	}
 
 	generic_motor_ISR(HAL_MTR2,
 	        _IQ(USER_MOTOR_RES_EST_CURRENT_2), _IQ(USER_MAX_VS_MAG_PU_2));
@@ -1047,8 +1052,6 @@ void generic_motor_ISR(
 
 interrupt void can1_ISR()
 {
-	gFoobar++;
-
 	// The same ISR is used by the eCAN module, independent of the source of the
 	// interrupt.  This means, we have to distinguish the various cases here,
 	// based on the values of certain registers (see SPRUH18f, section 16.13)
@@ -1091,6 +1094,44 @@ interrupt void can1_ISR()
 	// acknowledge interrupt from PIE
 	HAL_Obj *obj = (HAL_Obj *)halHandle;
 	PIE_clearInt(obj->pieHandle, PIE_GroupNumber_9);
+}
+
+
+interrupt void timer0_ISR()
+{
+	uint32_t mbox_mask = (CAN_MBOX_OUT_IqPos_mtr1
+			| CAN_MBOX_OUT_IqPos_mtr2
+			| CAN_MBOX_OUT_SPEED_mtr1
+			| CAN_MBOX_OUT_SPEED_mtr2);
+
+	if (++gCanTransStatusCnt >= CAN_STATUS_DECIMATION)
+	{
+		gCanTransStatusCnt = 0;
+		mbox_mask |= CAN_MBOX_OUT_STATUSMSG;
+	}
+
+	// TODO: better abortion handling
+	// If there is still an old message waiting for transmission, abort it
+	if (ECanaRegs.CANTRS.all & mbox_mask)
+	{
+		// TODO: notify about the issue
+		CAN_abort(mbox_mask);
+		// is it okay to block here (or at least wait for a while)?
+
+		gFoobar++;
+	}
+
+	if (mbox_mask & CAN_MBOX_OUT_STATUSMSG)
+		setCanStatusMsg();
+
+	setCanMotorData(HAL_MTR1);
+	setCanMotorData(HAL_MTR2);
+
+	// send messages via CAN
+	CAN_send(mbox_mask);
+
+	// acknowledge interrupt
+    HAL_acqTimer0Int(halHandle);
 }
 
 
@@ -1435,7 +1476,7 @@ void ST_runPosConv(
 }
 
 
-void sendStatusViaCAN()
+void setCanStatusMsg()
 {
 	CAN_StatusMsg_t status;
 
@@ -1446,14 +1487,12 @@ void sendStatusViaCAN()
 	status.bit.ready_motor1 = !gMotorVars[HAL_MTR1].Flag_enableAlignment;
 	status.bit.run_motor2 = gMotorVars[HAL_MTR2].Flag_Run_Identify;
 	status.bit.ready_motor2 = !gMotorVars[HAL_MTR2].Flag_enableAlignment;
-	CAN_setStatusMsg(status);
-	CAN_send(CAN_MBOX_OUT_STATUSMSG);
 
-	return;
+	CAN_setStatusMsg(status);
 }
 
 
-void sendMotorDataViaCAN(const HAL_MtrSelect_e mtrNum)
+void setCanMotorData(const HAL_MtrSelect_e mtrNum)
 {
 	_iq current_iq = _IQmpy(gIdq_pu[mtrNum].value[1],
 			_IQ(gUserParams[mtrNum].iqFullScaleCurrent_A));
@@ -1464,20 +1503,33 @@ void sendMotorDataViaCAN(const HAL_MtrSelect_e mtrNum)
 
 	if (mtrNum == HAL_MTR1)
 	{
+		// send number sequence for debugging
+		position = seq_counter;
+		speed = seq_counter++;
 		CAN_setDataMotor1(current_iq, position, speed);
-		CAN_send(CAN_MBOX_OUT_IqPos_mtr1 | CAN_MBOX_OUT_SPEED_mtr1);
 	}
 	else
 	{
 		CAN_setDataMotor2(current_iq, position, speed);
-		CAN_send(CAN_MBOX_OUT_IqPos_mtr2 | CAN_MBOX_OUT_SPEED_mtr2);
 	}
-
-	// TODO: is it maybe better to not block here but just initiate
-	// transmission and then wait at the end of the ISR till it is finished?
 
 	return;
 }
+
+
+void overwriteSetupTimer0(HAL_Handle handle, const uint32_t timerFreq_Hz)
+{
+  HAL_Obj  *obj = (HAL_Obj *)handle;
+  uint32_t  timerPeriod_cnts = ((uint32_t)gUserParams[0].systemFreq_MHz * 1e6l) / timerFreq_Hz - 1;
+
+  // use timer 0 for CAN transmissions
+  TIMER_setDecimationFactor(obj->timerHandle[0], 0);
+  TIMER_setEmulationMode(obj->timerHandle[0], TIMER_EmulationMode_RunFree);
+  TIMER_setPeriod(obj->timerHandle[0], timerPeriod_cnts);
+  TIMER_setPreScaler(obj->timerHandle[0], 0);
+
+  return;
+}  // end of HAL_setupTimers() function
 
 
 //@} //defgroup

@@ -158,6 +158,17 @@ inline void CAN_send(uint32_t mailboxes)
 }
 
 
+inline void CAN_abort(uint32_t mailboxes)
+{
+	// request transmission reset
+	ECanaRegs.CANTRR.all |= mailboxes;
+	// wait until TRS is cleared
+	//while ((ECanaRegs.CANTRS.all & mailboxes) != 0);
+
+	return;
+}
+
+
 #ifdef __cplusplus
 }
 #endif // extern "C"

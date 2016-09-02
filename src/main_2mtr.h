@@ -306,6 +306,7 @@ interrupt void motor1_ISR(void);
 interrupt void motor2_ISR(void);
 
 interrupt void can1_ISR();
+interrupt void timer0_ISR();
 
 void pidSetup(HAL_MtrSelect_e mtrNum);
 
@@ -359,11 +360,14 @@ void generic_motor_ISR(
 
 
 //! \brief Send the current status of the board via CAN
-inline void sendStatusViaCAN();
+inline void setCanStatusMsg();
 
 //! \brief Send data (current, position, etc.) of the specified motor via CAN
-void sendMotorDataViaCAN(const HAL_MtrSelect_e mtrNum);
+void setCanMotorData(const HAL_MtrSelect_e mtrNum);
 
+//! \brief Overwrite the stettings for timer0 done in HAL_setParams().
+//! Call this *after* HAL_setParams().
+void overwriteSetupTimer0(HAL_Handle handle, const uint32_t timerFreq_Hz);
 
 //@} //defgroup
 #endif // end of _MAIN_H_ definition

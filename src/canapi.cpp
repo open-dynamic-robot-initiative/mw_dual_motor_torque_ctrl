@@ -132,13 +132,13 @@ void CAN_initECana()
 	// because for some reason they are incremented by one before use...
 
 	// 500 kBit/s
-	ECanaShadow.CANBTC.bit.BRPREG = 4;
-	ECanaShadow.CANBTC.bit.TSEG1REG = 12;
-	ECanaShadow.CANBTC.bit.TSEG2REG = 3;
+	//ECanaShadow.CANBTC.bit.BRPREG = 4;
+	//ECanaShadow.CANBTC.bit.TSEG1REG = 12;
+	//ECanaShadow.CANBTC.bit.TSEG2REG = 3;
 	// 1 MBit/s
-	//ECanaShadow.CANBTC.bit.BRPREG = 2;
-	//ECanaShadow.CANBTC.bit.TSEG1REG = 11;
-	//ECanaShadow.CANBTC.bit.TSEG2REG = 1;
+	ECanaShadow.CANBTC.bit.BRPREG = 2;
+	ECanaShadow.CANBTC.bit.TSEG1REG = 11;
+	ECanaShadow.CANBTC.bit.TSEG2REG = 1;
 	ECanaShadow.CANBTC.bit.SJWREG = 1;
 	ECanaShadow.CANBTC.bit.SAM = 1;
 	ECanaRegs.CANBTC.all = ECanaShadow.CANBTC.all;
