@@ -706,14 +706,6 @@ interrupt void motor1_ISR(void)
 	// acknowledge the ADC interrupt
 	HAL_acqAdcInt(halHandle, ADC_IntNumber_1);
 
-	// Send motor data via CAN
-	if(canMotorDataSendCnt[HAL_MTR1]++
-			> (uint_least32_t)(USER_ISR_FREQ_Hz / CAN_MOTOR_DATA_SEND_FREQ_Hz))
-	{
-		canMotorDataSendCnt[HAL_MTR1] = 0;
-		sendMotorDataViaCAN(HAL_MTR1);
-	}
-
 	generic_motor_ISR(HAL_MTR1,
 	        _IQ(USER_MOTOR_RES_EST_CURRENT), _IQ(USER_MAX_VS_MAG_PU));
 
@@ -1504,8 +1496,8 @@ void setCanMotorData(const HAL_MtrSelect_e mtrNum)
 	if (mtrNum == HAL_MTR1)
 	{
 		// send number sequence for debugging
-		position = seq_counter;
-		speed = seq_counter++;
+//		position = seq_counter;
+//		speed = seq_counter++;
 		CAN_setDataMotor1(current_iq, position, speed);
 	}
 	else
