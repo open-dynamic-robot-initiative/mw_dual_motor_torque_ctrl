@@ -63,6 +63,8 @@
 // the defines
 
 #define LED_BLINK_FREQ_Hz   2
+#define LED_RED  HAL_Gpio_LED2
+#define LED_BLUE HAL_Gpio_LED3
 
 #define CAN_TRANSMISSION_TIMER_FREQ_Hz 1000
 #define CAN_STATUS_DECIMATION 1000
@@ -206,6 +208,8 @@ _iq gCurrent_A_to_pu_sf[2];
 uint16_t canCnt = 0;
 uint16_t canMotorDataSendCnt[2] = {0, 0};
 //uint32_t seq_counter = 0;
+uint32_t gTimer0_stamp = 0;
+uint16_t gLedSystemEnabledBlinkLastToggleTime = 0;
 
 // **************************************************************************
 // the functions
@@ -578,18 +582,43 @@ void main(void)
 	}
 
 
+	// turn red led off (no errors so far)
+	// NOTE: There is a bug with the LED functions. turnLedOn actually turns it off and vice-versa!
+	HAL_turnLedOn(halHandle, (GPIO_Number_e)LED_RED);
+
 	// Begin the background loop
 	for(;;)
 	{
 		// Waiting for enable system flag to be set
 		// Motor 1 Flag_enableSys is the master control.
-		while(!(gMotorVars[HAL_MTR1].Flag_enableSys));
+		while(!(gMotorVars[HAL_MTR1].Flag_enableSys))
+		{
+			HAL_turnLedOn(halHandle, (GPIO_Number_e)LED_BLUE);
+		}
 
 		// loop while the enable system flag is true
 		// Motor 1 Flag_enableSys is the master control.
 		while(gMotorVars[HAL_MTR1].Flag_enableSys)
 		{
 			uint_least8_t mtrNum = HAL_MTR1;
+
+
+			if (gMotorVars[0].Flag_Run_Identify || gMotorVars[1].Flag_Run_Identify)
+			{
+				// toggle status LED
+				// FIXME this is not overflow safe!
+				if(gLedSystemEnabledBlinkLastToggleTime
+						< ((uint16_t)gTimer0_stamp - CAN_TRANSMISSION_TIMER_FREQ_Hz / LED_BLINK_FREQ_Hz))
+				{
+					HAL_toggleLed(halHandle, (GPIO_Number_e)LED_BLUE);
+					gLedSystemEnabledBlinkLastToggleTime = gTimer0_stamp;
+				}
+			}
+			else
+			{
+				HAL_turnLedOff(halHandle, (GPIO_Number_e)LED_BLUE);
+			}
+
 
 			for(mtrNum=HAL_MTR1;mtrNum<=HAL_MTR2;mtrNum++)
 			{
@@ -696,13 +725,13 @@ interrupt void motor1_ISR(void)
 {
     HAL_setGpioHigh(halHandle, GPIO_Number_12);
 
-	// toggle status LED
-	if(gLEDcnt[HAL_MTR1]++
-	        > (uint_least32_t)(USER_ISR_FREQ_Hz / LED_BLINK_FREQ_Hz))
-	{
-	    HAL_toggleLed(halHandle, (GPIO_Number_e)HAL_Gpio_LED2);
-	    gLEDcnt[HAL_MTR1] = 0;
-	}
+//	// toggle status LED
+//	if(gLEDcnt[HAL_MTR1]++
+//	        > (uint_least32_t)(USER_ISR_FREQ_Hz / LED_BLINK_FREQ_Hz))
+//	{
+//	    HAL_toggleLed(halHandle, (GPIO_Number_e)HAL_Gpio_LED2);
+//	    gLEDcnt[HAL_MTR1] = 0;
+//	}
 
 	// acknowledge the ADC interrupt
 	HAL_acqAdcInt(halHandle, ADC_IntNumber_1);
@@ -720,13 +749,13 @@ interrupt void motor2_ISR(void)
 {
 	HAL_setGpioHigh(halHandle, GPIO_Number_13);
 
-	// toggle status LED
-	if(gLEDcnt[HAL_MTR2]++
-	        > (uint_least32_t)(USER_ISR_FREQ_Hz_2 / LED_BLINK_FREQ_Hz))
-	{
-	    HAL_toggleLed(halHandle, (GPIO_Number_e)HAL_Gpio_LED3);
-	    gLEDcnt[HAL_MTR2] = 0;
-	}
+//	// toggle status LED
+//	if(gLEDcnt[HAL_MTR2]++
+//	        > (uint_least32_t)(USER_ISR_FREQ_Hz_2 / LED_BLINK_FREQ_Hz))
+//	{
+//	    HAL_toggleLed(halHandle, (GPIO_Number_e)HAL_Gpio_LED3);
+//	    gLEDcnt[HAL_MTR2] = 0;
+//	}
 
 	// acknowledge the ADC interrupt
 	HAL_acqAdcInt(halHandle, ADC_IntNumber_2);
@@ -1092,11 +1121,14 @@ interrupt void can1_ISR()
 
 interrupt void timer0_ISR()
 {
+	++gTimer0_stamp;
+
 	uint32_t mbox_mask = (CAN_MBOX_OUT_IqPos_mtr1
 			| CAN_MBOX_OUT_IqPos_mtr2
 			| CAN_MBOX_OUT_SPEED_mtr1
 			| CAN_MBOX_OUT_SPEED_mtr2);
 
+	// TODO: use timer0_stamp to move this to main loop
 	if (++gCanTransStatusCnt >= CAN_STATUS_DECIMATION)
 	{
 		gCanTransStatusCnt = 0;
