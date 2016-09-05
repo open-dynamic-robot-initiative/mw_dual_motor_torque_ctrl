@@ -67,11 +67,14 @@
 #define LED_BLUE HAL_Gpio_LED3
 
 #define CAN_TRANSMISSION_TIMER_FREQ_Hz 1000
-#define CAN_STATUS_DECIMATION 1000
+#define CAN_STATUSMSG_TRANS_FREQ_Hz 1
+
+#define TIMER0_FREQ_Hz CAN_TRANSMISSION_TIMER_FREQ_Hz
 
 // **************************************************************************
 // the globals
 
+//! Used for various debugging stuff.
 uint32_t gFoobar = 0;
 
 CLARKE_Handle   clarkeHandle_I[2];  //!< the handle for the current Clarke
@@ -167,8 +170,6 @@ VIRTUALSPRING_Obj spring[2];
 
 uint16_t gLEDcnt[2] = {0, 0};
 
-uint16_t gCanTransStatusCnt = 0;
-
 volatile MOTOR_Vars_t gMotorVars[2] = {MOTOR_Vars_INIT_Mtr1, MOTOR_Vars_INIT_Mtr2};   //!< the global motor
 //!< variables that are defined in main.h and
 //!< used for display in the debugger's watch
@@ -205,11 +206,16 @@ _iq gSpeed_hz_to_krpm_sf[2];
 
 _iq gCurrent_A_to_pu_sf[2];
 
-uint16_t canCnt = 0;
-uint16_t canMotorDataSendCnt[2] = {0, 0};
 //uint32_t seq_counter = 0;
+
+//! Timestamp based on timer 0 (increased by one at each timer interrupt).
 uint32_t gTimer0_stamp = 0;
-uint16_t gLedSystemEnabledBlinkLastToggleTime = 0;
+
+//! Last time the blinking status LED was toggled (based on gTimer0_stamp).
+uint16_t gStatusLedBlinkLastToggleTime = 0;
+
+//! Last time a status message was sent via CAN (based on gTimer0_stamp).
+uint16_t gCanLastStatusMsgTime = 0;
 
 // **************************************************************************
 // the functions
@@ -269,7 +275,7 @@ void main(void)
 	GPIO_setQualificationPeriod(hal.gpioHandle, GPIO_Number_56, 11); //GPIO56-58
 
 	// Overwrite the settings for timer0 (we want it faster)
-	overwriteSetupTimer0(halHandle, CAN_TRANSMISSION_TIMER_FREQ_Hz);
+	overwriteSetupTimer0(halHandle, TIMER0_FREQ_Hz);
 
 	// initialize the estimator
 	estHandle[HAL_MTR1] = EST_init((void *)USER_EST_HANDLE_ADDRESS, 0x200);
@@ -606,17 +612,34 @@ void main(void)
 			if (gMotorVars[0].Flag_Run_Identify || gMotorVars[1].Flag_Run_Identify)
 			{
 				// toggle status LED
-				// FIXME this is not overflow safe!
-				if(gLedSystemEnabledBlinkLastToggleTime
-						< ((uint16_t)gTimer0_stamp - CAN_TRANSMISSION_TIMER_FREQ_Hz / LED_BLINK_FREQ_Hz))
+				if(gStatusLedBlinkLastToggleTime
+						< ((uint16_t)gTimer0_stamp - TIMER0_FREQ_Hz / LED_BLINK_FREQ_Hz))
 				{
 					HAL_toggleLed(halHandle, (GPIO_Number_e)LED_BLUE);
-					gLedSystemEnabledBlinkLastToggleTime = gTimer0_stamp;
+					gStatusLedBlinkLastToggleTime = gTimer0_stamp;
 				}
 			}
 			else
 			{
 				HAL_turnLedOff(halHandle, (GPIO_Number_e)LED_BLUE);
+			}
+
+
+			if(gCanLastStatusMsgTime
+					< ((uint16_t)gTimer0_stamp - TIMER0_FREQ_Hz / CAN_STATUSMSG_TRANS_FREQ_Hz))
+			{
+				// If there is still an old message waiting for transmission, abort it
+				if (ECanaRegs.CANTRS.all & CAN_MBOX_OUT_STATUSMSG)
+				{
+					// TODO: notify about the issue
+					CAN_abort(CAN_MBOX_OUT_STATUSMSG);
+					// is it okay to block here (or at least wait for a while)?
+				}
+
+				setCanStatusMsg();
+				CAN_send(CAN_MBOX_OUT_STATUSMSG);
+
+				gCanLastStatusMsgTime = gTimer0_stamp;
 			}
 
 
@@ -1128,13 +1151,6 @@ interrupt void timer0_ISR()
 			| CAN_MBOX_OUT_SPEED_mtr1
 			| CAN_MBOX_OUT_SPEED_mtr2);
 
-	// TODO: use timer0_stamp to move this to main loop
-	if (++gCanTransStatusCnt >= CAN_STATUS_DECIMATION)
-	{
-		gCanTransStatusCnt = 0;
-		mbox_mask |= CAN_MBOX_OUT_STATUSMSG;
-	}
-
 	// TODO: better abortion handling
 	// If there is still an old message waiting for transmission, abort it
 	if (ECanaRegs.CANTRS.all & mbox_mask)
@@ -1145,9 +1161,6 @@ interrupt void timer0_ISR()
 
 		gFoobar++;
 	}
-
-	if (mbox_mask & CAN_MBOX_OUT_STATUSMSG)
-		setCanStatusMsg();
 
 	setCanMotorData(HAL_MTR1);
 	setCanMotorData(HAL_MTR2);
