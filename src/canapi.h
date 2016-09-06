@@ -33,30 +33,30 @@ extern "C" {
 // NOTE: Changing the mailbox number of a message also requires adjustments in
 // the code below!
 #define CAN_MBOX_OUT_STATUSMSG  (uint32_t) 1 << 15
-#define CAN_MBOX_OUT_IqPos_mtr1 (uint32_t) 1 << 14
-#define CAN_MBOX_OUT_IqPos_mtr2 (uint32_t) 1 << 13
-#define CAN_MBOX_OUT_SPEED_mtr1 (uint32_t) 1 << 12
-#define CAN_MBOX_OUT_SPEED_mtr2 (uint32_t) 1 << 11
+#define CAN_MBOX_OUT_Iq         (uint32_t) 1 << 14
+#define CAN_MBOX_OUT_ENC_POS    (uint32_t) 1 << 13
+#define CAN_MBOX_OUT_SPEED      (uint32_t) 1 << 12
+#define CAN_MBOX_OUT_ADC6       (uint32_t) 1 << 11
 #define CAN_MBOX_IN_COMMANDS    (uint32_t) 1 << 0
 #define CAN_MBOX_IN_IqRef       (uint32_t) 1 << 1
 
 #define CAN_MBOX_ALL  CAN_MBOX_OUT_STATUSMSG \
-	| CAN_MBOX_OUT_IqPos_mtr1 \
-	| CAN_MBOX_OUT_IqPos_mtr2 \
-	| CAN_MBOX_OUT_SPEED_mtr1 \
-	| CAN_MBOX_OUT_SPEED_mtr2 \
+	| CAN_MBOX_OUT_Iq \
+	| CAN_MBOX_OUT_ENC_POS \
+	| CAN_MBOX_OUT_SPEED \
+	| CAN_MBOX_OUT_ADC6 \
 	| CAN_MBOX_IN_COMMANDS \
 	| CAN_MBOX_IN_IqRef
 
 
 // Arbitration IDs of the different message types
-#define CAN_ID_COMMANDS    0x00
-#define CAN_ID_IqRef       0x05
-#define CAN_ID_STATUSMSG   0x10
-#define CAN_ID_IqPos_mtr1  0x21
-#define CAN_ID_IqPos_mtr2  0x22
-#define CAN_ID_SPEED_mtr1  0x31
-#define CAN_ID_SPEED_mtr2  0x32
+#define CAN_ID_COMMANDS   0x00
+#define CAN_ID_IqRef      0x05
+#define CAN_ID_STATUSMSG  0x10
+#define CAN_ID_Iq         0x20
+#define CAN_ID_END_POS    0x30
+#define CAN_ID_SPEED      0x40
+#define CAN_ID_ADC6       0x50
 
 
 // **************************************************************************
@@ -107,28 +107,28 @@ inline void CAN_setStatusMsg(CAN_StatusMsg_t statusmsg)
 	return;
 }
 
-//! \brief Write motor data of motor 1 to the corresponding transmission mailbox
+//! \brief Write motor data of motor 1 to the corresponding transmission mailboxes
 //! \param current_iq  The current Iq of the motor in A.
 //! \param encoder_position  Current position of the motor in mechanical revolutions (mrev).
 //! \param velocity  Velocity of the motor in krpm.
 inline void CAN_setDataMotor1(_iq current_iq, _iq position, _iq velocity)
 {
 	ECanaMboxes.MBOX14.MDL.all = current_iq;
-	ECanaMboxes.MBOX14.MDH.all = position;
+	ECanaMboxes.MBOX13.MDL.all = position;
 	ECanaMboxes.MBOX12.MDL.all = velocity;
 
 	return;
 }
 
-//! \brief Write motor data of motor 2 to the corresponding transmission mailbox
+//! \brief Write motor data of motor 2 to the corresponding transmission mailboxes
 //! \param current_iq  The current Iq of the motor in A.
 //! \param encoder_position  Current position of the motor in mechanical revolutions (mrev).
 //! \param velocity  Velocity of the motor in krpm.
 inline void CAN_setDataMotor2(_iq current_iq, _iq encoder_position, _iq velocity)
 {
-	ECanaMboxes.MBOX13.MDL.all = current_iq;
+	ECanaMboxes.MBOX14.MDH.all = current_iq;
 	ECanaMboxes.MBOX13.MDH.all = encoder_position;
-	ECanaMboxes.MBOX11.MDL.all = velocity;
+	ECanaMboxes.MBOX12.MDH.all = velocity;
 
 	return;
 }

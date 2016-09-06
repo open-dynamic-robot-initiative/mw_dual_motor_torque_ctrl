@@ -1146,10 +1146,11 @@ interrupt void timer0_ISR()
 {
 	++gTimer0_stamp;
 
-	uint32_t mbox_mask = (CAN_MBOX_OUT_IqPos_mtr1
-			| CAN_MBOX_OUT_IqPos_mtr2
-			| CAN_MBOX_OUT_SPEED_mtr1
-			| CAN_MBOX_OUT_SPEED_mtr2);
+	uint32_t mbox_mask = (CAN_MBOX_OUT_Iq
+			| CAN_MBOX_OUT_ENC_POS
+			| CAN_MBOX_OUT_SPEED
+			| CAN_MBOX_OUT_ADC6);
+	// TODO MBOX for ADC6 is not filled with data yet!
 
 	// TODO: better abortion handling
 	// If there is still an old message waiting for transmission, abort it

@@ -174,10 +174,10 @@ void CAN_setupMboxes()
 	/// Set arbitration IDs for all used mailboxes
 	// Since we are using the standard mode, only the bits 28:18 are used.
     ECanaMboxes.MBOX15.MSGID.all = (uint32_t)CAN_ID_STATUSMSG << 18;
-    ECanaMboxes.MBOX14.MSGID.all = (uint32_t)CAN_ID_IqPos_mtr1 << 18;
-    ECanaMboxes.MBOX13.MSGID.all = (uint32_t)CAN_ID_IqPos_mtr2 << 18;
-    ECanaMboxes.MBOX12.MSGID.all = (uint32_t)CAN_ID_SPEED_mtr1 << 18;
-    ECanaMboxes.MBOX11.MSGID.all = (uint32_t)CAN_ID_SPEED_mtr2 << 18;
+    ECanaMboxes.MBOX14.MSGID.all = (uint32_t)CAN_ID_Iq<< 18;
+    ECanaMboxes.MBOX13.MSGID.all = (uint32_t)CAN_ID_END_POS << 18;
+    ECanaMboxes.MBOX12.MSGID.all = (uint32_t)CAN_ID_SPEED<< 18;
+    ECanaMboxes.MBOX11.MSGID.all = (uint32_t)CAN_ID_ADC6 << 18;
     ECanaMboxes.MBOX0.MSGID.all = (uint32_t)CAN_ID_COMMANDS << 18;
     ECanaMboxes.MBOX1.MSGID.all = (uint32_t)CAN_ID_IqRef << 18;
 
@@ -202,8 +202,10 @@ void CAN_setupMboxes()
     ECanaRegs.CANME.all = CAN_MBOX_ALL;
 
     // Specify the number of bytes that will be sent/received by each mailbox
-    ECanaMboxes.MBOX11.MSGCTRL.bit.DLC = 4;
-    ECanaMboxes.MBOX12.MSGCTRL.bit.DLC = 4;
+    ECanaMboxes.MBOX0.MSGCTRL.bit.DLC = 8;
+    ECanaMboxes.MBOX1.MSGCTRL.bit.DLC = 8;
+    ECanaMboxes.MBOX11.MSGCTRL.bit.DLC = 8;
+    ECanaMboxes.MBOX12.MSGCTRL.bit.DLC = 8;
     ECanaMboxes.MBOX13.MSGCTRL.bit.DLC = 8;
     ECanaMboxes.MBOX14.MSGCTRL.bit.DLC = 8;
     ECanaMboxes.MBOX15.MSGCTRL.bit.DLC = 1;
