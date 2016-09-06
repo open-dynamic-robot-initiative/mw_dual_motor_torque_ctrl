@@ -71,6 +71,9 @@
 
 #define TIMER0_FREQ_Hz CAN_TRANSMISSION_TIMER_FREQ_Hz
 
+#define POTI_RESULT1 ADC_ResultNumber_0
+#define POTI_RESULT2 ADC_ResultNumber_8
+
 // **************************************************************************
 // the globals
 
@@ -216,6 +219,7 @@ uint16_t gStatusLedBlinkLastToggleTime = 0;
 
 //! Last time a status message was sent via CAN (based on gTimer0_stamp).
 uint16_t gCanLastStatusMsgTime = 0;
+
 
 // **************************************************************************
 // the functions
@@ -609,6 +613,7 @@ void main(void)
 			uint_least8_t mtrNum = HAL_MTR1;
 
 
+			// Show system and motor status using the blue LED
 			if (gMotorVars[0].Flag_Run_Identify || gMotorVars[1].Flag_Run_Identify)
 			{
 				// toggle status LED
@@ -623,6 +628,7 @@ void main(void)
 			{
 				HAL_turnLedOff(halHandle, (GPIO_Number_e)LED_BLUE);
 			}
+
 
 
 			if(gCanLastStatusMsgTime
@@ -1150,7 +1156,6 @@ interrupt void timer0_ISR()
 			| CAN_MBOX_OUT_ENC_POS
 			| CAN_MBOX_OUT_SPEED
 			| CAN_MBOX_OUT_ADC6);
-	// TODO MBOX for ADC6 is not filled with data yet!
 
 	// TODO: better abortion handling
 	// If there is still an old message waiting for transmission, abort it
@@ -1165,6 +1170,10 @@ interrupt void timer0_ISR()
 
 	setCanMotorData(HAL_MTR1);
 	setCanMotorData(HAL_MTR2);
+
+	CAN_setAdcIn6Values(
+			HAL_readAdcResult(halHandle, POTI_RESULT1),
+			HAL_readAdcResult(halHandle, POTI_RESULT2));
 
 	// send messages via CAN
 	CAN_send(mbox_mask);

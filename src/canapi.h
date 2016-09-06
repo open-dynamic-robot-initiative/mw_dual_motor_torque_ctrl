@@ -133,6 +133,15 @@ inline void CAN_setDataMotor2(_iq current_iq, _iq encoder_position, _iq velocity
 	return;
 }
 
+//! \brief Write readings of ADCINA6 and B6 to the corresponding transmission mailbox
+//! \param adcin_a6 Result of ADCINA6
+//! \param adcin_b6 Result of ADCINB6
+inline void CAN_setAdcIn6Values(_iq adcin_a6, _iq adcin_b6)
+{
+	ECanaMboxes.MBOX11.MDL.all = adcin_a6;
+	ECanaMboxes.MBOX11.MDH.all = adcin_b6;
+}
+
 //! \brief Send data of the specified mailboxes
 //!
 //! To specify the mailboxes, use the CAN_MBOX_OUT_xy defines for this. Example:
