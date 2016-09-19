@@ -63,8 +63,11 @@
 // the defines
 
 #define LED_BLINK_FREQ_Hz   2
-#define LED_RED  HAL_Gpio_LED2
-#define LED_BLUE HAL_Gpio_LED3
+#define LED_ONBOARD_RED  (GPIO_Number_e)HAL_Gpio_LED2
+#define LED_ONBOARD_BLUE (GPIO_Number_e)HAL_Gpio_LED3
+#define LED_EXTERN_RED GPIO_Number_12
+#define LED_EXTERN_YELLOW GPIO_Number_13
+#define LED_EXTERN_GREEN GPIO_Number_22
 
 #define CAN_TRANSMISSION_TIMER_FREQ_Hz 1000
 #define CAN_STATUSMSG_TRANS_FREQ_Hz 1
@@ -526,12 +529,18 @@ void main(void)
 	HAL_disablePwm(halHandleMtr[HAL_MTR1]);
 	HAL_disablePwm(halHandleMtr[HAL_MTR2]);
 
-	{// config GPIO 13 as output
-	    HAL_Obj *obj = (HAL_Obj *)halHandle;
-	    GPIO_setLow(obj->gpioHandle, GPIO_Number_13);
-	    GPIO_setDirection(obj->gpioHandle,
-	            GPIO_Number_13,
-	            GPIO_Direction_Output);
+	{// config GPIO 13 and 22 as output (for LEDs)
+		// TODO: Move this to hal_2mtr.c?  Maybe create an own copy of hal.c with all the modifications?
+		HAL_Obj *obj = (HAL_Obj *)halHandle;
+		GPIO_setLow(obj->gpioHandle, GPIO_Number_13);
+		GPIO_setDirection(obj->gpioHandle,
+				GPIO_Number_13,
+				GPIO_Direction_Output);
+
+		GPIO_setLow(obj->gpioHandle, GPIO_Number_22);
+		GPIO_setDirection(obj->gpioHandle,
+				GPIO_Number_22,
+				GPIO_Direction_Output);
 	}
 
 	// initialize SpinTAC Velocity Control watch window variables
@@ -593,8 +602,7 @@ void main(void)
 
 
 	// turn red led off (no errors so far)
-	// NOTE: There is a bug with the LED functions. turnLedOn actually turns it off and vice-versa!
-	HAL_turnLedOn(halHandle, (GPIO_Number_e)LED_RED);
+	HAL_turnLedOff(halHandle, (GPIO_Number_e)LED_ONBOARD_RED);
 
 	// Begin the background loop
 	for(;;)
@@ -603,7 +611,9 @@ void main(void)
 		// Motor 1 Flag_enableSys is the master control.
 		while(!(gMotorVars[HAL_MTR1].Flag_enableSys))
 		{
-			HAL_turnLedOn(halHandle, (GPIO_Number_e)LED_BLUE);
+			HAL_turnLedOff(halHandle, LED_ONBOARD_BLUE);
+			HAL_turnLedOff(halHandle, LED_EXTERN_GREEN);
+			HAL_turnLedOn(halHandle, LED_EXTERN_RED);
 		}
 
 		// loop while the enable system flag is true
@@ -612,6 +622,8 @@ void main(void)
 		{
 			uint_least8_t mtrNum = HAL_MTR1;
 
+			gFoobar++;
+			HAL_turnLedOff(halHandle, LED_EXTERN_RED);
 
 			// Show system and motor status using the blue LED
 			if (gMotorVars[0].Flag_Run_Identify || gMotorVars[1].Flag_Run_Identify)
@@ -620,13 +632,15 @@ void main(void)
 				if(gStatusLedBlinkLastToggleTime
 						< (gTimer0_stamp - TIMER0_FREQ_Hz / LED_BLINK_FREQ_Hz))
 				{
-					HAL_toggleLed(halHandle, (GPIO_Number_e)LED_BLUE);
+					HAL_toggleLed(halHandle, LED_ONBOARD_BLUE);
+					HAL_toggleLed(halHandle, LED_EXTERN_GREEN);
 					gStatusLedBlinkLastToggleTime = gTimer0_stamp;
 				}
 			}
 			else
 			{
-				HAL_turnLedOff(halHandle, (GPIO_Number_e)LED_BLUE);
+				HAL_turnLedOn(halHandle, LED_ONBOARD_BLUE);
+				HAL_turnLedOn(halHandle, LED_EXTERN_GREEN);
 			}
 
 
@@ -752,7 +766,7 @@ void main(void)
 //! \brief     The main ISR that implements the motor control.
 interrupt void motor1_ISR(void)
 {
-    HAL_setGpioHigh(halHandle, GPIO_Number_12);
+    //HAL_setGpioHigh(halHandle, GPIO_Number_12);
 
 //	// toggle status LED
 //	if(gLEDcnt[HAL_MTR1]++
@@ -768,7 +782,7 @@ interrupt void motor1_ISR(void)
 	generic_motor_ISR(HAL_MTR1,
 	        _IQ(USER_MOTOR_RES_EST_CURRENT), _IQ(USER_MAX_VS_MAG_PU));
 
-	HAL_setGpioLow(halHandle, GPIO_Number_12);
+	//HAL_setGpioLow(halHandle, GPIO_Number_12);
 
 	return;
 } // end of motor1_ISR() function
@@ -776,7 +790,7 @@ interrupt void motor1_ISR(void)
 
 interrupt void motor2_ISR(void)
 {
-	HAL_setGpioHigh(halHandle, GPIO_Number_13);
+	//HAL_setGpioHigh(halHandle, GPIO_Number_13);
 
 //	// toggle status LED
 //	if(gLEDcnt[HAL_MTR2]++
@@ -793,7 +807,7 @@ interrupt void motor2_ISR(void)
 	        _IQ(USER_MOTOR_RES_EST_CURRENT_2), _IQ(USER_MAX_VS_MAG_PU_2));
 
 
-	HAL_setGpioLow(halHandle, GPIO_Number_13);
+	//HAL_setGpioLow(halHandle, GPIO_Number_13);
 
 	return;
 } // end of motor2_ISR() function
@@ -1161,11 +1175,14 @@ interrupt void timer0_ISR()
 	// If there is still an old message waiting for transmission, abort it
 	if (ECanaRegs.CANTRS.all & mbox_mask)
 	{
+		HAL_turnLedOn(halHandle, LED_EXTERN_YELLOW);
 		// TODO: notify about the issue
 		CAN_abort(mbox_mask);
 		// is it okay to block here (or at least wait for a while)?
-
-		gFoobar++;
+	}
+	else
+	{
+		HAL_turnLedOff(halHandle, LED_EXTERN_YELLOW);
 	}
 
 	setCanMotorData(HAL_MTR1);
