@@ -215,10 +215,10 @@ _iq gCurrent_A_to_pu_sf[2];
 uint32_t gTimer0_stamp = 0;
 
 //! Last time the blinking status LED was toggled (based on gTimer0_stamp).
-uint16_t gStatusLedBlinkLastToggleTime = 0;
+uint32_t gStatusLedBlinkLastToggleTime = 0;
 
 //! Last time a status message was sent via CAN (based on gTimer0_stamp).
-uint16_t gCanLastStatusMsgTime = 0;
+uint32_t gCanLastStatusMsgTime = 0;
 
 
 // **************************************************************************
@@ -618,7 +618,7 @@ void main(void)
 			{
 				// toggle status LED
 				if(gStatusLedBlinkLastToggleTime
-						< ((uint16_t)gTimer0_stamp - TIMER0_FREQ_Hz / LED_BLINK_FREQ_Hz))
+						< (gTimer0_stamp - TIMER0_FREQ_Hz / LED_BLINK_FREQ_Hz))
 				{
 					HAL_toggleLed(halHandle, (GPIO_Number_e)LED_BLUE);
 					gStatusLedBlinkLastToggleTime = gTimer0_stamp;
@@ -630,9 +630,9 @@ void main(void)
 			}
 
 
-
+			// Send status message via CAN
 			if(gCanLastStatusMsgTime
-					< ((uint16_t)gTimer0_stamp - TIMER0_FREQ_Hz / CAN_STATUSMSG_TRANS_FREQ_Hz))
+					< (gTimer0_stamp - TIMER0_FREQ_Hz / CAN_STATUSMSG_TRANS_FREQ_Hz))
 			{
 				// If there is still an old message waiting for transmission, abort it
 				if (ECanaRegs.CANTRS.all & CAN_MBOX_OUT_STATUSMSG)
