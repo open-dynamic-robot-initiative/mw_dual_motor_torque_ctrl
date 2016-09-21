@@ -59,6 +59,19 @@ extern "C" {
 #define CAN_ID_ADC6       0x50
 
 
+// COMMAND IDs
+#define CAN_CMD_ENABLE_SYS 1
+#define CAN_CMD_ENABLE_MTR1 2
+#define CAN_CMD_ENABLE_MTR2 3
+#define CAN_CMD_ENABLE_VSPRING1 4
+#define CAN_CMD_ENABLE_VSPRING2 5
+#define CAN_CMD_SEND_CURRENT 12
+#define CAN_CMD_SEND_POSITION 13
+#define CAN_CMD_SEND_VELOCITY 14
+#define CAN_CMD_SEND_ADC6 15
+#define CAN_CMD_SEND_ALL 20
+
+
 // **************************************************************************
 // the typedefs
 

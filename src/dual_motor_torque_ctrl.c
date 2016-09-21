@@ -223,6 +223,7 @@ uint32_t gStatusLedBlinkLastToggleTime = 0;
 //! Last time a status message was sent via CAN (based on gTimer0_stamp).
 uint32_t gCanLastStatusMsgTime = 0;
 
+uint32_t gEnabledCanMessages = 0;
 
 ////! \brief Status message bits.
 //struct ERROR_BITS {         // bits   description
@@ -241,6 +242,17 @@ uint32_t gCanLastStatusMsgTime = 0;
 
 // **************************************************************************
 // the functions
+
+// Little helper function
+inline void setCanMboxStatus(const uint32_t mbox, const uint32_t status)
+{
+	if (status) {
+		gEnabledCanMessages |= mbox;
+	} else {
+		gEnabledCanMessages &= ~mbox;
+	}
+}
+
 void main(void)
 {
 	// IMPORTANT NOTE: If you are not familiar with MotorWare coding guidelines
@@ -1153,17 +1165,43 @@ interrupt void can1_ISR()
 
 		switch (cmd_id)
 		{
-		case 1: // enable system
+		case CAN_CMD_ENABLE_SYS: // enable system
 			gMotorVars[HAL_MTR1].Flag_enableSys = cmd_val;
 			break;
-		case 2: // run motor 1
+		case CAN_CMD_ENABLE_MTR1: // run motor 1
 			gMotorVars[HAL_MTR1].Flag_Run_Identify = cmd_val;
 			break;
-		case 3: // run motor 2
+		case CAN_CMD_ENABLE_MTR2: // run motor 2
 			gMotorVars[HAL_MTR2].Flag_Run_Identify = cmd_val;
 			break;
-		case 4: // motor 1 enable spring
+		case CAN_CMD_ENABLE_VSPRING1: // motor 1 enable spring
 			spring[HAL_MTR1].enabled = cmd_val;
+			break;
+		case CAN_CMD_ENABLE_VSPRING2: // motor 2 enable spring
+			spring[HAL_MTR2].enabled = cmd_val;
+			break;
+
+		case CAN_CMD_SEND_CURRENT:
+			setCanMboxStatus(CAN_MBOX_OUT_Iq, cmd_val);
+			break;
+		case CAN_CMD_SEND_POSITION:
+			setCanMboxStatus(CAN_MBOX_OUT_ENC_POS, cmd_val);
+			break;
+		case CAN_CMD_SEND_VELOCITY:
+			setCanMboxStatus(CAN_MBOX_OUT_SPEED, cmd_val);
+			break;
+		case CAN_CMD_SEND_ADC6:
+			setCanMboxStatus(CAN_MBOX_OUT_ADC6, cmd_val);
+			break;
+		case CAN_CMD_SEND_ALL:
+			if (cmd_val) {
+				gEnabledCanMessages = (CAN_MBOX_OUT_Iq
+						| CAN_MBOX_OUT_ENC_POS
+						| CAN_MBOX_OUT_SPEED
+						| CAN_MBOX_OUT_ADC6);
+			} else {
+				gEnabledCanMessages = 0;
+			}
 			break;
 		}
 
@@ -1181,10 +1219,7 @@ interrupt void timer0_ISR()
 {
 	++gTimer0_stamp;
 
-	uint32_t mbox_mask = (CAN_MBOX_OUT_Iq
-			| CAN_MBOX_OUT_ENC_POS
-			| CAN_MBOX_OUT_SPEED
-			| CAN_MBOX_OUT_ADC6);
+	uint32_t mbox_mask = gEnabledCanMessages;
 
 	// TODO: better abortion handling
 	// If there is still an old message waiting for transmission, abort it
