@@ -224,6 +224,21 @@ uint32_t gStatusLedBlinkLastToggleTime = 0;
 uint32_t gCanLastStatusMsgTime = 0;
 
 
+////! \brief Status message bits.
+//struct ERROR_BITS {         // bits   description
+//   uint16_t can_error:1;    // 0
+//   uint16_t rsvd:15;        // 1-15  reserved
+//};
+//
+////! \brief Status message that allows integer or bit access.
+//typedef union _Error_t_ {
+//   uint16_t           all;
+//   struct ERROR_BITS  bit;
+//} Error_t;
+//
+//Error_t gErrors;
+
+
 // **************************************************************************
 // the functions
 void main(void)
