@@ -74,6 +74,8 @@
 
 #define TIMER0_FREQ_Hz CAN_TRANSMISSION_TIMER_FREQ_Hz
 
+#define QEP_MAX_INDEX_ERROR  (1./360.) * USER_MOTOR_ENCODER_LINES  // 1 degree
+
 #define POTI_RESULT1 ADC_ResultNumber_0
 #define POTI_RESULT2 ADC_ResultNumber_8
 
@@ -238,6 +240,11 @@ uint32_t gEnabledCanMessages = 0;
 //} Error_t;
 //
 //Error_t gErrors;
+
+QepIndexWatchdog_t gQepIndexWatchdog[2] = {
+		{.isInitialized = false, .indexError_counts = 0},
+		{.isInitialized = false, .indexError_counts = 0}};
+
 
 
 // **************************************************************************
@@ -1683,37 +1690,40 @@ void setupQepIndexInterrupt(HAL_Handle halHandle, HAL_Handle_mtr halHandleMtr[2]
 
 interrupt void qep1IndexISR()
 {
-	HAL_Obj *obj = (HAL_Obj *)halHandle;
-	HAL_Obj_mtr *halMtrObj = (HAL_Obj_mtr *)halHandleMtr[HAL_MTR1];
-
-	//HAL_toggleLed(halHandle, LED_EXTERN_YELLOW);
-
-	// do some stuff...
-
-	// acknowledge QEP interrupt
-	QEP_clear_all_interrupt_flags(halMtrObj->qepHandle);  // for some reason I have to clear *all* flags, not only Iel
-
-	// acknowledge interrupt from PIE group 5
-	PIE_clearInt(obj->pieHandle, PIE_GroupNumber_5);
+	genericQepIndexISR(HAL_MTR1);
 }
 
 
 interrupt void qep2IndexISR()
 {
+	genericQepIndexISR(HAL_MTR2);
+}
+
+
+inline void genericQepIndexISR(const HAL_MtrSelect_e mtrNum)
+{
 	HAL_Obj *obj = (HAL_Obj *)halHandle;
-	HAL_Obj_mtr *halMtrObj = (HAL_Obj_mtr *)halHandleMtr[HAL_MTR2];
+	HAL_Obj_mtr *halMtrObj = (HAL_Obj_mtr *)halHandleMtr[mtrNum];
 
-	//HAL_toggleLed(halHandle, LED_EXTERN_YELLOW);
-
-	// do some stuff...
+	uint32_t index_posn = QEP_read_posn_index_latch(halMtrObj->qepHandle);
+	if (gQepIndexWatchdog[mtrNum].isInitialized) {
+		gQepIndexWatchdog[mtrNum].indexError_counts = index_posn - gQepIndexWatchdog[mtrNum].indexPosition_counts;
+	} else {
+		gQepIndexWatchdog[mtrNum].isInitialized = true;
+		gQepIndexWatchdog[mtrNum].indexPosition_counts = index_posn;
+	}
 
 	// acknowledge QEP interrupt
 	QEP_clear_all_interrupt_flags(halMtrObj->qepHandle);  // for some reason I have to clear *all* flags, not only Iel
-
 	// acknowledge interrupt from PIE group 5
 	PIE_clearInt(obj->pieHandle, PIE_GroupNumber_5);
 }
 
+
+bool checkEncoderError(const QepIndexWatchdog_t qiwd)
+{
+	return abs(qiwd.indexError_counts) > QEP_MAX_INDEX_ERROR;
+}
 
 //@} //defgroup
 // end of file

@@ -286,6 +286,13 @@ typedef struct _MOTOR_Vars_t_
 }MOTOR_Vars_t;
 
 
+typedef struct _QepIndexWatchdog_t_
+{
+	bool isInitialized;
+	int32_t indexPosition_counts;
+	int32_t indexError_counts;
+} QepIndexWatchdog_t;
+
 
 // **************************************************************************
 // the globals
@@ -373,6 +380,9 @@ void setupQepIndexInterrupt(HAL_Handle halHandle, HAL_Handle_mtr halHandleMtr[2]
 
 interrupt void qep1IndexISR();
 interrupt void qep2IndexISR();
+inline void genericQepIndexISR(const HAL_MtrSelect_e mtrNum);
+
+inline bool checkEncoderError(const QepIndexWatchdog_t);
 
 
 //@} //defgroup
