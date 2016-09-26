@@ -511,6 +511,9 @@ void main(void)
 			USER_ISR_FREQ_Hz_2,
 			8000.0);
 
+	// setup encoder index interrupts
+	setupQepIndexInterrupt(halHandle, halHandleMtr);
+
 	// setup the SpinTAC Components
 	ST_setupPosConv_mtr1(stHandle[HAL_MTR1]);
 	ST_setupPosConv_mtr2(stHandle[HAL_MTR2]);
@@ -649,7 +652,6 @@ void main(void)
 		{
 			uint_least8_t mtrNum = HAL_MTR1;
 
-			gFoobar++;
 			HAL_turnLedOff(halHandle, LED_EXTERN_RED);
 
 			// Show system and motor status using the blue LED
@@ -1645,6 +1647,72 @@ void overwriteSetupTimer0(HAL_Handle handle, const uint32_t timerFreq_Hz)
 
   return;
 }  // end of HAL_setupTimers() function
+
+
+void setupQepIndexInterrupt(HAL_Handle halHandle, HAL_Handle_mtr halHandleMtr[2])
+{
+	uint_least8_t mtrNum;
+	HAL_Obj *halObj = (HAL_Obj *)halHandle;
+	HAL_Obj_mtr *halMtrObj;
+	PIE_Obj *pie = (PIE_Obj *)halObj->pieHandle;
+
+	// specify ISRs
+	ENABLE_PROTECTED_REGISTER_WRITE_MODE;
+	pie->EQEP1_INT = &qep1IndexISR;
+	pie->EQEP2_INT = &qep2IndexISR;
+	//PIE_registerPieIntHandler(obj->pieHandle, PIE_GroupNumber_5, PIE_InterruptSource_EQEP1, &qepIndexISR);
+	DISABLE_PROTECTED_REGISTER_WRITE_MODE;
+
+	for(mtrNum=HAL_MTR1; mtrNum <= HAL_MTR2; mtrNum++)
+	{
+		halMtrObj = (HAL_Obj_mtr *)halHandleMtr[mtrNum];
+
+		// enable QEP interrupt for index
+		QEP_clear_all_interrupt_flags(halMtrObj->qepHandle);
+		QEP_enable_interrupt(halMtrObj->qepHandle, QEINT_Iel);
+	}
+
+	// enable the corresponding interrupts in PIE (group 5)
+	PIE_enableInt(halObj->pieHandle, PIE_GroupNumber_5, PIE_InterruptSource_EQEP1);
+	PIE_enableInt(halObj->pieHandle, PIE_GroupNumber_5, PIE_InterruptSource_EQEP2);
+
+	// finally enable the CPU interrupt for PIE group 5 interrupts
+	CPU_enableInt(halObj->cpuHandle, CPU_IntNumber_5);
+}
+
+
+interrupt void qep1IndexISR()
+{
+	HAL_Obj *obj = (HAL_Obj *)halHandle;
+	HAL_Obj_mtr *halMtrObj = (HAL_Obj_mtr *)halHandleMtr[HAL_MTR1];
+
+	//HAL_toggleLed(halHandle, LED_EXTERN_YELLOW);
+
+	// do some stuff...
+
+	// acknowledge QEP interrupt
+	QEP_clear_all_interrupt_flags(halMtrObj->qepHandle);  // for some reason I have to clear *all* flags, not only Iel
+
+	// acknowledge interrupt from PIE group 5
+	PIE_clearInt(obj->pieHandle, PIE_GroupNumber_5);
+}
+
+
+interrupt void qep2IndexISR()
+{
+	HAL_Obj *obj = (HAL_Obj *)halHandle;
+	HAL_Obj_mtr *halMtrObj = (HAL_Obj_mtr *)halHandleMtr[HAL_MTR2];
+
+	//HAL_toggleLed(halHandle, LED_EXTERN_YELLOW);
+
+	// do some stuff...
+
+	// acknowledge QEP interrupt
+	QEP_clear_all_interrupt_flags(halMtrObj->qepHandle);  // for some reason I have to clear *all* flags, not only Iel
+
+	// acknowledge interrupt from PIE group 5
+	PIE_clearInt(obj->pieHandle, PIE_GroupNumber_5);
+}
 
 
 //@} //defgroup

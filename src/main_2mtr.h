@@ -369,5 +369,11 @@ void setCanMotorData(const HAL_MtrSelect_e mtrNum);
 //! Call this *after* HAL_setParams().
 void overwriteSetupTimer0(HAL_Handle handle, const uint32_t timerFreq_Hz);
 
+void setupQepIndexInterrupt(HAL_Handle halHandle, HAL_Handle_mtr halHandleMtr[2]);
+
+interrupt void qep1IndexISR();
+interrupt void qep2IndexISR();
+
+
 //@} //defgroup
 #endif // end of _MAIN_H_ definition
