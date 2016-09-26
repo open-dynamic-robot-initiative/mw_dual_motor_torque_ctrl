@@ -372,6 +372,10 @@ inline void setCanStatusMsg();
 //! \brief Send data (current, position, etc.) of the specified motor via CAN
 void setCanMotorData(const HAL_MtrSelect_e mtrNum);
 
+//! \brief Send status message if the last sent message is older than the
+//! \brief period specified via CAN_STATUSMSG_TRANS_FREQ_Hz.
+void maybeSendCanStatusMsg();
+
 //! \brief Overwrite the stettings for timer0 done in HAL_setParams().
 //! Call this *after* HAL_setParams().
 void overwriteSetupTimer0(HAL_Handle handle, const uint32_t timerFreq_Hz);

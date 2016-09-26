@@ -655,6 +655,8 @@ void main(void)
 		{
 			HAL_turnLedOff(halHandle, LED_ONBOARD_BLUE);
 			HAL_turnLedOff(halHandle, LED_EXTERN_GREEN);
+
+			maybeSendCanStatusMsg();
 		}
 
 		// loop while the enable system flag is true
@@ -698,22 +700,7 @@ void main(void)
 
 
 			// Send status message via CAN
-			if(gCanLastStatusMsgTime
-					< (gTimer0_stamp - TIMER0_FREQ_Hz / CAN_STATUSMSG_TRANS_FREQ_Hz))
-			{
-				// If there is still an old message waiting for transmission, abort it
-				if (ECanaRegs.CANTRS.all & CAN_MBOX_OUT_STATUSMSG)
-				{
-					// TODO: notify about the issue
-					CAN_abort(CAN_MBOX_OUT_STATUSMSG);
-					// is it okay to block here (or at least wait for a while)?
-				}
-
-				setCanStatusMsg();
-				CAN_send(CAN_MBOX_OUT_STATUSMSG);
-
-				gCanLastStatusMsgTime = gTimer0_stamp;
-			}
+			maybeSendCanStatusMsg();
 
 
 			for(mtrNum=HAL_MTR1;mtrNum<=HAL_MTR2;mtrNum++)
@@ -1656,6 +1643,27 @@ void setCanMotorData(const HAL_MtrSelect_e mtrNum)
 	}
 
 	return;
+}
+
+
+void maybeSendCanStatusMsg()
+{
+	if(gCanLastStatusMsgTime
+			< (gTimer0_stamp - TIMER0_FREQ_Hz / CAN_STATUSMSG_TRANS_FREQ_Hz))
+	{
+		// If there is still an old message waiting for transmission, abort it
+		if (ECanaRegs.CANTRS.all & CAN_MBOX_OUT_STATUSMSG)
+		{
+			// TODO: notify about the issue
+			CAN_abort(CAN_MBOX_OUT_STATUSMSG);
+			// is it okay to block here (or at least wait for a while)?
+		}
+
+		setCanStatusMsg();
+		CAN_send(CAN_MBOX_OUT_STATUSMSG);
+
+		gCanLastStatusMsgTime = gTimer0_stamp;
+	}
 }
 
 
