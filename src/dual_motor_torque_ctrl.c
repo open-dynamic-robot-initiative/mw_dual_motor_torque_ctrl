@@ -227,19 +227,20 @@ uint32_t gCanLastStatusMsgTime = 0;
 
 uint32_t gEnabledCanMessages = 0;
 
-////! \brief Status message bits.
-//struct ERROR_BITS {         // bits   description
-//   uint16_t can_error:1;    // 0
-//   uint16_t rsvd:15;        // 1-15  reserved
-//};
-//
-////! \brief Status message that allows integer or bit access.
-//typedef union _Error_t_ {
-//   uint16_t           all;
-//   struct ERROR_BITS  bit;
-//} Error_t;
-//
-//Error_t gErrors;
+//! \brief Status message bits.
+struct ERROR_BITS {         // bits   description
+   uint16_t can_error:1;    // 0
+   uint16_t qep_error:1;
+   uint16_t rsvd:14;        // 1-15  reserved
+};
+
+//! \brief Status message that allows integer or bit access.
+typedef union _Error_t_ {
+   uint16_t           all;
+   struct ERROR_BITS  bit;
+} Error_t;
+
+Error_t gErrors;
 
 QepIndexWatchdog_t gQepIndexWatchdog[2] = {
 		{.isInitialized = false, .indexError_counts = 0},
@@ -276,6 +277,9 @@ void main(void)
 	memCopy((uint16_t *)&RamfuncsLoadStart, (uint16_t *)&RamfuncsLoadEnd,
 			(uint16_t *)&RamfuncsRunStart);
 #endif
+
+	// At the beginning, there are no errors
+	gErrors.all = 0;
 
 	// initialize the Hardware Abstraction Layer  (HAL)
 	// halHandle will be used throughout the code to interface with the HAL
@@ -639,7 +643,8 @@ void main(void)
 
 
 	// turn red led off (no errors so far)
-	HAL_turnLedOff(halHandle, (GPIO_Number_e)LED_ONBOARD_RED);
+	HAL_turnLedOff(halHandle, LED_ONBOARD_RED);
+	HAL_turnLedOff(halHandle, LED_EXTERN_RED);
 
 	// Begin the background loop
 	for(;;)
@@ -650,7 +655,6 @@ void main(void)
 		{
 			HAL_turnLedOff(halHandle, LED_ONBOARD_BLUE);
 			HAL_turnLedOff(halHandle, LED_EXTERN_GREEN);
-			HAL_turnLedOn(halHandle, LED_EXTERN_RED);
 		}
 
 		// loop while the enable system flag is true
@@ -659,7 +663,6 @@ void main(void)
 		{
 			uint_least8_t mtrNum = HAL_MTR1;
 
-			HAL_turnLedOff(halHandle, LED_EXTERN_RED);
 
 			// Show system and motor status using the blue LED
 			if (gMotorVars[0].Flag_Run_Identify || gMotorVars[1].Flag_Run_Identify)
@@ -677,6 +680,20 @@ void main(void)
 			{
 				HAL_turnLedOn(halHandle, LED_ONBOARD_BLUE);
 				HAL_turnLedOn(halHandle, LED_EXTERN_GREEN);
+			}
+
+
+			// Error checks
+			gErrors.bit.qep_error = (checkEncoderError(gQepIndexWatchdog[0]) || checkEncoderError(gQepIndexWatchdog[1]));
+
+			if (gErrors.all) {
+				// When there is an error, shut down the system to be safe
+				gMotorVars[HAL_MTR1].Flag_enableSys = false;
+				HAL_turnLedOn(halHandle, LED_ONBOARD_RED);
+				HAL_turnLedOn(halHandle, LED_EXTERN_RED);
+			} else {
+				HAL_turnLedOff(halHandle, LED_ONBOARD_RED);
+				HAL_turnLedOff(halHandle, LED_EXTERN_RED);
 			}
 
 
@@ -1611,6 +1628,7 @@ void setCanStatusMsg()
 	status.bit.ready_motor1 = !gMotorVars[HAL_MTR1].Flag_enableAlignment;
 	status.bit.run_motor2 = gMotorVars[HAL_MTR2].Flag_Run_Identify;
 	status.bit.ready_motor2 = !gMotorVars[HAL_MTR2].Flag_enableAlignment;
+	status.bit.system_error = gErrors.all != 0;
 
 	CAN_setStatusMsg(status);
 }
