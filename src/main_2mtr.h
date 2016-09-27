@@ -91,205 +91,213 @@
 //! \brief Defines the speed acceleration scale factor.
 //!
 #define MAX_ACCEL_KRPMPS_SF _IQ(USER_MOTOR_NUM_POLE_PAIRS * 1000.0 \
-        / USER_TRAJ_FREQ_Hz / USER_IQ_FULL_SCALE_FREQ_Hz / 60.0)
+		/ USER_TRAJ_FREQ_Hz / USER_IQ_FULL_SCALE_FREQ_Hz / 60.0)
 
 //! \brief Initialization values of global variables
 //!
-#define MOTOR_Vars_INIT_Mtr1  {false, \
-                               false, \
-                               false, \
-                               true, \
-                               false, \
-                               false, \
-                               true, \
-                               true, \
-                               false, \
-                               false, \
-							   true, \
-                               CTRL_State_Idle, \
-                               EST_State_Idle, \
-                               USER_ErrorCode_NoError, \
-                               {0, CTRL_TargetProc_Unknown, 0, 0}, \
-                               _IQ(0.0), \
-                               _IQ(0.0), \
-                               _IQ(0.0), \
-                               _IQ(0.1), \
-                               _IQ(0.0), \
-                               _IQ(0.2), \
-                               _IQ20(500.0), \
-                               _IQ(0.0), \
-                               _IQ(USER_MAX_VS_MAG_PU), \
-                               _IQ(0.1 * USER_MOTOR_MAX_CURRENT), \
-                               400, \
-                               _IQ(0.0), \
-                               _IQ(0.0), \
-                               0.0, \
-                               0.0, \
-                               0.0, \
-                               0.0, \
-                               0.0, \
-                               0.0, \
-                               0.0, \
-                               0.0, \
-                               _IQ(0.0), \
-                               _IQ(0.0), \
-                               _IQ(0.0), \
-                               0.0, \
-                               0.0, \
-                               _IQ(0.0), \
-                               _IQ(0.0), \
-                               _IQ(0.0), \
-                               _IQ(0.0), \
-                               _IQ(0.0), \
-                               _IQ(0.0), \
-                               _IQ(0.0), \
-                               _IQ(0.8 * USER_MAX_VS_MAG_PU), \
-                               _IQ(0.0), \
-                               _IQ(0.0), \
-                               _IQ(0.0), \
-                               _IQ(0.0), \
-                               {0, 0, 0}, \
-                               {0, 0, 0}, \
-						       ST_VARS_DEFAULTS_MTR1}
+#define MOTOR_Vars_INIT_Mtr1  { \
+		false, \
+		false, \
+		false, \
+		true, \
+		false, \
+		false, \
+		true, \
+		true, \
+		false, \
+		false, \
+		true, \
+		CTRL_State_Idle, \
+		EST_State_Idle, \
+		USER_ErrorCode_NoError, \
+		{0, CTRL_TargetProc_Unknown, 0, 0}, \
+		_IQ(0.0), \
+		_IQ(0.0), \
+		_IQ(0.0), \
+		_IQ(0.1), \
+		_IQ(0.0), \
+		_IQ(0.2), \
+		_IQ20(500.0), \
+		_IQ(0.0), \
+		_IQ(USER_MAX_VS_MAG_PU), \
+		_IQ(0.1 * USER_MOTOR_MAX_CURRENT), \
+		400, \
+		_IQ(0.0), \
+		_IQ(0.0), \
+		0.0, \
+		0.0, \
+		0.0, \
+		0.0, \
+		0.0, \
+		0.0, \
+		0.0, \
+		0.0, \
+		_IQ(0.0), \
+		_IQ(0.0), \
+		_IQ(0.0), \
+		0.0, \
+		0.0, \
+		_IQ(0.0), \
+		_IQ(0.0), \
+		_IQ(0.0), \
+		_IQ(0.0), \
+		_IQ(0.0), \
+		_IQ(0.0), \
+		_IQ(0.0), \
+		_IQ(0.8 * USER_MAX_VS_MAG_PU), \
+		_IQ(0.0), \
+		_IQ(0.0), \
+		_IQ(0.0), \
+		_IQ(0.0), \
+		{0, 0, 0}, \
+		{0, 0, 0}, \
+		ST_VARS_DEFAULTS_MTR1}
 
-#define MOTOR_Vars_INIT_Mtr2  {false, \
-                               false, \
-                               false, \
-                               true, \
-                               false, \
-                               false, \
-                               true, \
-                               true, \
-                               false, \
-                               false, \
-							   true, \
-                               CTRL_State_Idle, \
-                               EST_State_Idle, \
-                               USER_ErrorCode_NoError, \
-                               {0, CTRL_TargetProc_Unknown, 0, 0}, \
-                               _IQ(0.0), \
-                               _IQ(0.0), \
-                               _IQ(0.0), \
-                               _IQ(0.1), \
-                               _IQ(0.0), \
-                               _IQ(0.2), \
-							   _IQ20(500.0), \
-                               _IQ(0.0), \
-                               _IQ(USER_MAX_VS_MAG_PU_2), \
-                               _IQ(0.1 * USER_MOTOR_MAX_CURRENT_2), \
-                               400, \
-                               _IQ(0.0), \
-                               _IQ(0.0), \
-                               0.0, \
-                               0.0, \
-                               0.0, \
-                               0.0, \
-                               0.0, \
-                               0.0, \
-                               0.0, \
-                               0.0, \
-                               _IQ(0.0), \
-                               _IQ(0.0), \
-                               _IQ(0.0), \
-                               0.0, \
-                               0.0, \
-                               _IQ(0.0), \
-                               _IQ(0.0), \
-                               _IQ(0.0), \
-                               _IQ(0.0), \
-                               _IQ(0.0), \
-                               _IQ(0.0), \
-                               _IQ(0.0), \
-                               _IQ(0.8 * USER_MAX_VS_MAG_PU_2), \
-                               _IQ(0.0), \
-                               _IQ(0.0), \
-                               _IQ(0.0), \
-                               _IQ(0.0), \
-                               {0, 0, 0}, \
-                               {0, 0, 0}, \
-						       ST_VARS_DEFAULTS_MTR2}
+#define MOTOR_Vars_INIT_Mtr2  { \
+		false, \
+		false, \
+		false, \
+		true, \
+		false, \
+		false, \
+		true, \
+		true, \
+		false, \
+		false, \
+		true, \
+		CTRL_State_Idle, \
+		EST_State_Idle, \
+		USER_ErrorCode_NoError, \
+		{0, CTRL_TargetProc_Unknown, 0, 0}, \
+		_IQ(0.0), \
+		_IQ(0.0), \
+		_IQ(0.0), \
+		_IQ(0.1), \
+		_IQ(0.0), \
+		_IQ(0.2), \
+		_IQ20(500.0), \
+		_IQ(0.0), \
+		_IQ(USER_MAX_VS_MAG_PU_2), \
+		_IQ(0.1 * USER_MOTOR_MAX_CURRENT_2), \
+		400, \
+		_IQ(0.0), \
+		_IQ(0.0), \
+		0.0, \
+		0.0, \
+		0.0, \
+		0.0, \
+		0.0, \
+		0.0, \
+		0.0, \
+		0.0, \
+		_IQ(0.0), \
+		_IQ(0.0), \
+		_IQ(0.0), \
+		0.0, \
+		0.0, \
+		_IQ(0.0), \
+		_IQ(0.0), \
+		_IQ(0.0), \
+		_IQ(0.0), \
+		_IQ(0.0), \
+		_IQ(0.0), \
+		_IQ(0.0), \
+		_IQ(0.8 * USER_MAX_VS_MAG_PU_2), \
+		_IQ(0.0), \
+		_IQ(0.0), \
+		_IQ(0.0), \
+		_IQ(0.0), \
+		{0, 0, 0}, \
+		{0, 0, 0}, \
+		ST_VARS_DEFAULTS_MTR2}
 
 // **************************************************************************
 // the typedefs
 
 typedef struct _MOTOR_Vars_t_
 {
-  bool Flag_enableSys;
-  bool Flag_Run_Identify;
-  bool Flag_MotorIdentified;
-  bool Flag_enableForceAngle;
-  bool Flag_enableFieldWeakening;
-  bool Flag_enableRsRecalc;
-  bool Flag_enableUserParams;
-  bool Flag_enableOffsetcalc;
-  bool Flag_enablePowerWarp;
-  bool Flag_enableSpeedCtrl;
-  bool Flag_enableAlignment;
+	bool Flag_enableSys;
+	bool Flag_Run_Identify;
+	bool Flag_MotorIdentified;
+	bool Flag_enableForceAngle;
+	bool Flag_enableFieldWeakening;
+	bool Flag_enableRsRecalc;
+	bool Flag_enableUserParams;
+	bool Flag_enableOffsetcalc;
+	bool Flag_enablePowerWarp;
+	bool Flag_enableSpeedCtrl;
+	bool Flag_enableAlignment;
 
-  CTRL_State_e CtrlState;
-  EST_State_e EstState;
+	CTRL_State_e CtrlState;
+	EST_State_e EstState;
 
-  USER_ErrorCode_e UserErrorCode;
+	USER_ErrorCode_e UserErrorCode;
 
-  CTRL_Version CtrlVersion;
+	CTRL_Version CtrlVersion;
 
-  _iq IdRef_A;
-  _iq IqRef_A;
-  _iq SpeedRef_pu;
-  _iq SpeedRef_krpm;
-  _iq SpeedTraj_krpm;
-  _iq MaxAccel_krpmps;
-  _iq20 MaxJrk_krpmps2;
-  _iq Speed_krpm;
-  _iq OverModulation;
-  _iq RsOnLineCurrent_A;
-  _iq SvgenMaxModulation_ticks;
-  _iq Flux_Wb;
-  _iq Torque_Nm;
+	_iq IdRef_A;
+	_iq IqRef_A;
+	_iq SpeedRef_pu;
+	_iq SpeedRef_krpm;
+	_iq SpeedTraj_krpm;
+	_iq MaxAccel_krpmps;
+	_iq20 MaxJrk_krpmps2;
+	_iq Speed_krpm;
+	_iq OverModulation;
+	_iq RsOnLineCurrent_A;
+	_iq SvgenMaxModulation_ticks;
+	_iq Flux_Wb;
+	_iq Torque_Nm;
 
-  float_t MagnCurr_A;
-  float_t Rr_Ohm;
-  float_t Rs_Ohm;
-  float_t RsOnLine_Ohm;
-  float_t Lsd_H;
-  float_t Lsq_H;
-  float_t Flux_VpHz;
+	float_t MagnCurr_A;
+	float_t Rr_Ohm;
+	float_t Rs_Ohm;
+	float_t RsOnLine_Ohm;
+	float_t Lsd_H;
+	float_t Lsq_H;
+	float_t Flux_VpHz;
 
-  float_t ipd_excFreq_Hz;
-  _iq     ipd_Kspd;
-  _iq     ipd_excMag_coarse_pu;
-  _iq     ipd_excMag_fine_pu;
-  float   ipd_waitTime_coarse_sec;
-  float   ipd_waitTime_fine_sec;
+	float_t ipd_excFreq_Hz;
+	_iq     ipd_Kspd;
+	_iq     ipd_excMag_coarse_pu;
+	_iq     ipd_excMag_fine_pu;
+	float   ipd_waitTime_coarse_sec;
+	float   ipd_waitTime_fine_sec;
 
-  _iq Kp_spd;
-  _iq Ki_spd;
+	_iq Kp_spd;
+	_iq Ki_spd;
 
-  _iq Kp_Idq;
-  _iq Ki_Idq;
+	_iq Kp_Idq;
+	_iq Ki_Idq;
 
-  _iq Vd;
-  _iq Vq;
-  _iq Vs;
-  _iq VsRef;
-  _iq VdcBus_kV;
+	_iq Vd;
+	_iq Vq;
+	_iq Vs;
+	_iq VsRef;
+	_iq VdcBus_kV;
 
-  _iq Id_A;
-  _iq Iq_A;
-  _iq Is_A;
+	_iq Id_A;
+	_iq Iq_A;
+	_iq Is_A;
 
-  MATH_vec3 I_bias;
-  MATH_vec3 V_bias;
-  
-  ST_Vars_t SpinTAC;
+	MATH_vec3 I_bias;
+	MATH_vec3 V_bias;
 
-}MOTOR_Vars_t;
+	ST_Vars_t SpinTAC;
+
+} MOTOR_Vars_t;
 
 
+//! \brief Encapsulates data of the QEP Index Watchdog
+//! Based on the position of the index, errors in the QEP modules (e.g. missed
+//! encoder lines) are detected.
 typedef struct _QepIndexWatchdog_t_
 {
+	//! False until indexPosition_counts is set.
 	bool isInitialized;
+	//! Position of the first detected index.
 	int32_t indexPosition_counts;
+	//! Error between indexPosition_counts and the last detected index.
 	int32_t indexError_counts;
 } QepIndexWatchdog_t;
 
@@ -306,6 +314,7 @@ volatile struct ECAN_MBOXES ECanaMboxes;
 
 // **************************************************************************
 // the function prototypes
+
 
 //! \brief The main interrupt service (ISR) routine
 //!
@@ -361,9 +370,9 @@ _iq EST_runPowerWarp(EST_Handle handle, const _iq Id_int_pu, const _iq Iq_pu);
 
 //! \brief Motor ISR that can be used for both motors.
 void generic_motor_ISR(
-        const HAL_MtrSelect_e mtrNum,
-        const _iq user_motor_res_est_current,
-        const _iq user_max_vs_mag_pu);
+		const HAL_MtrSelect_e mtrNum,
+		const _iq user_motor_res_est_current,
+		const _iq user_max_vs_mag_pu);
 
 
 //! \brief Send the current status of the board via CAN
@@ -380,12 +389,16 @@ void maybeSendCanStatusMsg();
 //! Call this *after* HAL_setParams().
 void overwriteSetupTimer0(HAL_Handle handle, const uint32_t timerFreq_Hz);
 
+//! \brief Set up the interrupts for encoder indices
 void setupQepIndexInterrupt(HAL_Handle halHandle, HAL_Handle_mtr halHandleMtr[2]);
 
+//! \brief ISR triggered by index of QEP1.
 interrupt void qep1IndexISR();
+//! \brief ISR triggered by index of QEP2.
 interrupt void qep2IndexISR();
+//! \brief Helper function for the QEP index ISRs (handles interrupt for QEP mtrNum).
 inline void genericQepIndexISR(const HAL_MtrSelect_e mtrNum);
-
+//! \brief Check if the QEP error is too high.
 inline bool checkEncoderError(const QepIndexWatchdog_t);
 
 
