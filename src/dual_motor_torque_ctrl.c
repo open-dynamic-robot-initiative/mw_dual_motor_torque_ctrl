@@ -227,21 +227,10 @@ uint32_t gCanLastStatusMsgTime = 0;
 
 uint32_t gEnabledCanMessages = 0;
 
-//! \brief Status message bits.
-struct ERROR_BITS {         // bits   description
-   uint16_t can_error:1;    // 0
-   uint16_t qep_error:1;
-   uint16_t rsvd:14;        // 1-15  reserved
-};
-
-//! \brief Status message that allows integer or bit access.
-typedef union _Error_t_ {
-   uint16_t           all;
-   struct ERROR_BITS  bit;
-} Error_t;
-
+//! Errors that occured in the system.  gErrors.all == 0 if no errors occured.
 Error_t gErrors;
 
+//! QEP index watchdog data for both encoders.
 QepIndexWatchdog_t gQepIndexWatchdog[2] = {
 		{.isInitialized = false, .indexError_counts = 0},
 		{.isInitialized = false, .indexError_counts = 0}};

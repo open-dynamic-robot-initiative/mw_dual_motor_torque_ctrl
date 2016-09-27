@@ -288,6 +288,20 @@ typedef struct _MOTOR_Vars_t_
 } MOTOR_Vars_t;
 
 
+//! \brief Status message bits.
+struct ERROR_BITS {         // bits   description
+	uint16_t can_error:1;    // 0
+	uint16_t qep_error:1;    // 1
+	uint16_t rsvd:14;        // 1-15  reserved
+};
+
+//! \brief Status message that allows integer or bit access.
+typedef union _Error_t_ {
+	uint16_t           all;
+	struct ERROR_BITS  bit;
+} Error_t;
+
+
 //! \brief Encapsulates data of the QEP Index Watchdog
 //! Based on the position of the index, errors in the QEP modules (e.g. missed
 //! encoder lines) are detected.
