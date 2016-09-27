@@ -103,7 +103,7 @@ PID_Obj         pid[2][3];          //!< three objects for PID controllers
 									//!< 0 - Speed, 1 - Id, 2 - Iq
 PID_Handle      pidHandle[2][3];    //!< three handles for PID controllers
 									//!< 0 - Speed, 1 - Id, 2 - Iq
-uint16_t        stCntSpeed[2];      //!< count variable to decimate the execution
+uint16_t        stCntSpeed[2] = {0, 0};      //!< count variable to decimate the execution
 									//!< of SpinTAC Velocity Control
 uint16_t        stCntPosConv[2] = {0, 0}; //!< count variable to decimate the
                                           //!< execution of SpinTAC Position Converter
@@ -896,7 +896,7 @@ void generic_motor_ISR(
 	ENC_calcElecAngle(
 	        encHandle[mtrNum], HAL_getQepPosnCounts(halHandleMtr[mtrNum]));
 
-	if(++ stCntPosConv[mtrNum]>= gNumIsrTicksPerPosConvTick[mtrNum])
+	if(++stCntPosConv[mtrNum] >= gNumIsrTicksPerPosConvTick[mtrNum])
 	{
 	    stCntPosConv[mtrNum] = 0;
 		// Calculate the feedback speed
@@ -921,40 +921,12 @@ void generic_motor_ISR(
 		{
 			// when appropriate, run SpinTAC Velocity Control
 			// This mechanism provides the decimation for the speed loop.
-			if(stCntSpeed[mtrNum]
+			// FIXME: This is using the wrong decimation
+			if(++stCntSpeed[mtrNum]
 			              >= gUserParams[mtrNum].numCtrlTicksPerSpeedTick)
 			{
 				// Reset the Speed execution counter.
-				stCntSpeed[mtrNum] = 0;  //FIXME I dont think it is correct like this
-
-				/*
-				// Pass the configuration to SpinTAC Velocity Move
-				STVELMOVE_setCurveType(st_obj[mtrNum].velMoveHandle,
-						gMotorVars[mtrNum].SpinTAC.VelMoveCurveType);
-				STVELMOVE_setVelocityEnd(
-						st_obj[mtrNum].velMoveHandle,
-						_IQmpy(gMotorVars[mtrNum].SpeedRef_krpm,
-								gSpeed_krpm_to_pu_sf[mtrNum]));
-				STVELMOVE_setAccelerationLimit(
-						st_obj[mtrNum].velMoveHandle,
-						_IQmpy(gMotorVars[mtrNum].MaxAccel_krpmps,
-								gSpeed_krpm_to_pu_sf[mtrNum]));
-				STVELMOVE_setJerkLimit(
-						st_obj[mtrNum].velMoveHandle,
-						_IQ20mpy(gMotorVars[mtrNum].MaxJrk_krpmps2,
-								_IQtoIQ20(gSpeed_krpm_to_pu_sf[mtrNum])));
-				// The next instruction executes SpinTAC Velocity Move
-				// This is the speed profile generation
-				ST_runVelMove(stHandle[mtrNum], NULL,
-						(bool *)&gMotorVars[mtrNum].Flag_enableForceAngle);
-
-				// The next instruction executes SpinTAC Velocity Control and
-				// places its output in Idq_ref_pu.value[1], which is the input
-				// reference value for the q-axis current controller.
-				gIdq_ref_pu[mtrNum].value[1] = ST_runVelCtl(
-						stHandle[mtrNum],
-						STPOSCONV_getVelocity(st_obj[mtrNum].posConvHandle));
-				*/
+				stCntSpeed[mtrNum] = 0;
 
 				// If virtual spring mode is deactivated, reset IqRef to 0
 				if (VIRTUALSPRING_isJustDisabled(springHandle[mtrNum])) {
@@ -986,11 +958,6 @@ void generic_motor_ISR(
 				gIdq_ref_pu[mtrNum].value[1] = _IQmpy(
 				        gMotorVars[mtrNum].IqRef_A,
 				        _IQ(1.0 / USER_IQ_FULL_SCALE_CURRENT_A));
-			}
-			else
-			{
-				// increment counter
-				stCntSpeed[mtrNum]++;
 			}
 
 			// generate the motor electrical angle
@@ -1313,9 +1280,6 @@ void pidSetup(HAL_MtrSelect_e mtrNum)
 	pidHandle[mtrNum][1] = PID_init(&pid[mtrNum][1], sizeof(pid[mtrNum][1]));
 	// This is for the Iq current controller
 	pidHandle[mtrNum][2] = PID_init(&pid[mtrNum][2], sizeof(pid[mtrNum][2]));
-
-	stCntSpeed[mtrNum] = 0;  // Set the counter for decimating the speed
-	// controller to 0
 
 	// The following instructions load the parameters for the d-axis
 	// current controller.
