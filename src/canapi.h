@@ -54,7 +54,7 @@ extern "C" {
 #define CAN_ID_IqRef      0x05
 #define CAN_ID_STATUSMSG  0x10
 #define CAN_ID_Iq         0x20
-#define CAN_ID_END_POS    0x30
+#define CAN_ID_POS        0x30
 #define CAN_ID_SPEED      0x40
 #define CAN_ID_ADC6       0x50
 

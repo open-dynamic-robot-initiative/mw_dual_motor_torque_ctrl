@@ -169,19 +169,19 @@ void CAN_initECana()
 
 void CAN_setupMboxes()
 {
-	// Mailboxs can be written to 16-bits or 32-bits at a time
+	// Mailboxes can be written to 16-bits or 32-bits at a time
 
 	/// Set arbitration IDs for all used mailboxes
 	// Since we are using the standard mode, only the bits 28:18 are used.
     ECanaMboxes.MBOX15.MSGID.all = (uint32_t)CAN_ID_STATUSMSG << 18;
-    ECanaMboxes.MBOX14.MSGID.all = (uint32_t)CAN_ID_Iq<< 18;
-    ECanaMboxes.MBOX13.MSGID.all = (uint32_t)CAN_ID_END_POS << 18;
-    ECanaMboxes.MBOX12.MSGID.all = (uint32_t)CAN_ID_SPEED<< 18;
+    ECanaMboxes.MBOX14.MSGID.all = (uint32_t)CAN_ID_Iq << 18;
+    ECanaMboxes.MBOX13.MSGID.all = (uint32_t)CAN_ID_POS << 18;
+    ECanaMboxes.MBOX12.MSGID.all = (uint32_t)CAN_ID_SPEED << 18;
     ECanaMboxes.MBOX11.MSGID.all = (uint32_t)CAN_ID_ADC6 << 18;
     ECanaMboxes.MBOX0.MSGID.all = (uint32_t)CAN_ID_COMMANDS << 18;
     ECanaMboxes.MBOX1.MSGID.all = (uint32_t)CAN_ID_IqRef << 18;
 
-    // TODO: dont use mbox0 for commands. Those commands should have highest
+    // TODO: Don't use mbox0 for commands. Those commands should have highest
     // priority of all messages (needed to disable motor in case of some
     // failure), so it should get the highest priority receive mailbox).
 
