@@ -916,17 +916,20 @@ void generic_motor_ISR(
 		_iq fbackValue;
 		_iq outMax_pu;
 
-		// check if the motor should be forced into encoder slignment
+		// check if the motor should be forced into encoder alignment
 		if(gMotorVars[mtrNum].Flag_enableAlignment == false)
 		{
-			// when appropriate, run SpinTAC Velocity Control
-			// This mechanism provides the decimation for the speed loop.
+			// When appropriate, update the current reference.
+			// This mechanism provides the decimation for the upper level
+			// control loop.
 			// FIXME: This is using the wrong decimation
 			if(++stCntSpeed[mtrNum]
 			              >= gUserParams[mtrNum].numCtrlTicksPerSpeedTick)
 			{
 				// Reset the Speed execution counter.
 				stCntSpeed[mtrNum] = 0;
+
+				// TODO: Is it easily possible to remove (with #ifdef) all virtual spring stuff for Flash build?
 
 				// If virtual spring mode is deactivated, reset IqRef to 0
 				if (VIRTUALSPRING_isJustDisabled(springHandle[mtrNum])) {
@@ -937,12 +940,10 @@ void generic_motor_ISR(
 				    VIRTUALSPRING_scheduleResetOffset(springHandle[mtrNum]);
 				}
 
-				// run virtual spring to update its deflection value
-				VIRTUALSPRING_run(springHandle[mtrNum],
-				        st_obj[mtrNum].vel.conv.Pos_mrev);
-
 				// If spring is enabled, set IqRef based on it
 				if (VIRTUALSPRING_isEnabled(springHandle[mtrNum])) {
+					VIRTUALSPRING_run(springHandle[mtrNum],
+							st_obj[mtrNum].vel.conv.Pos_mrev);
 				    gMotorVars[mtrNum].IqRef_A =
 				            VIRTUALSPRING_getIqRef_A(springHandle[mtrNum]);
 				}
@@ -1127,7 +1128,7 @@ interrupt void can1_ISR()
 	// (there shouldn't be any).
 	// Note: ECanaRegs.CANGIF1.bit.MIV1 contains the number of the mailbox that
 	// caused this interrupt (this should always be 0 for now).
-	if (ECanaRegs.CANRMP.bit.RMP0 == 1) // FIXME: this does not get set anymore!
+	if (ECanaRegs.CANRMP.bit.RMP0 == 1)
 	{
 		uint32_t cmd_id = ECanaMboxes.MBOX0.MDH.all;
 		uint32_t cmd_val = ECanaMboxes.MBOX0.MDL.all;
