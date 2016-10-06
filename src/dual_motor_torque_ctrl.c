@@ -1564,12 +1564,17 @@ void setCanStatusMsg()
 
 	// Send status message via CAN
 	status.all = 0;
-	status.bit.enable_system = gMotorVars[HAL_MTR1].Flag_enableSys;
-	status.bit.run_motor1 = gMotorVars[HAL_MTR1].Flag_Run_Identify;
-	status.bit.ready_motor1 = !gMotorVars[HAL_MTR1].Flag_enableAlignment;
-	status.bit.run_motor2 = gMotorVars[HAL_MTR2].Flag_Run_Identify;
-	status.bit.ready_motor2 = !gMotorVars[HAL_MTR2].Flag_enableAlignment;
-	status.bit.system_error = gErrors.all != 0;
+	status.bit.system_enabled = gMotorVars[HAL_MTR1].Flag_enableSys;
+	status.bit.motor1_enabled = gMotorVars[HAL_MTR1].Flag_Run_Identify;
+	status.bit.motor1_ready = !gMotorVars[HAL_MTR1].Flag_enableAlignment;
+	status.bit.motor2_enabled = gMotorVars[HAL_MTR2].Flag_Run_Identify;
+	status.bit.motor2_ready = !gMotorVars[HAL_MTR2].Flag_enableAlignment;
+	if (gErrors.bit.qep_error)
+		status.bit.error_code = CAN_ERROR_ENCODER;
+	else if (gErrors.bit.can_error)
+		status.bit.error_code = CAN_ERROR_CAN;
+	else
+		status.bit.error_code = CAN_ERROR_NO_ERROR;
 
 	CAN_setStatusMsg(status);
 }

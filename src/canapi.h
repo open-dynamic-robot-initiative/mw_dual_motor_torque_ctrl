@@ -72,20 +72,27 @@ extern "C" {
 #define CAN_CMD_SEND_ALL 20
 
 
+// Error Codes
+#define CAN_ERROR_NO_ERROR 0
+#define CAN_ERROR_ENCODER 1
+#define CAN_ERROR_CAN 2 // TODO is this usefull?
+#define CAN_ERROR_CRIT_TEMP 3  // unused
+#define CAN_ERROR_OTHER 7
+
+
+
 // **************************************************************************
 // the typedefs
 
 //! \brief Status message bits.
-struct CAN_STATUSMSG_BITS {      // bits   description
-   uint16_t enable_system:1;     // 0
-   uint16_t run_motor1:1;        // 1
-   uint16_t ready_motor1:1;      // 2
-   uint16_t run_motor2:1;        // 3
-   uint16_t ready_motor2:1;      // 4
-   uint16_t motor1_temp_alert:1; // 5
-   uint16_t motor2_temp_alert:1; // 6
-   uint16_t system_error:1;      // 7
-   uint16_t rsvd:8;              // 8-15  reserved
+struct CAN_STATUSMSG_BITS {    // bits   description
+   uint16_t system_enabled:1;  // 0
+   uint16_t motor1_enabled:1;  // 1
+   uint16_t motor1_ready:1;    // 2
+   uint16_t motor2_enabled:1;  // 3
+   uint16_t motor2_ready:1;    // 4
+   uint16_t error_code:3;      // 5-7
+   uint16_t rsvd:8;            // 8-15  reserved
 };
 
 //! \brief Status message that allows integer or bit access.
