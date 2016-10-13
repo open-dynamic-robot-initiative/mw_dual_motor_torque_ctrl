@@ -176,6 +176,8 @@ ST_Handle       stHandle[2];    //!< the handles for the SpinTAC objects
 VIRTUALSPRING_Handle springHandle[2];
 VIRTUALSPRING_Obj spring[2];
 
+bool gFlag_enableCan = true;
+
 uint16_t gLEDcnt[2] = {0, 0};
 
 volatile MOTOR_Vars_t gMotorVars[2] = {MOTOR_Vars_INIT_Mtr1, MOTOR_Vars_INIT_Mtr2};   //!< the global motor
@@ -947,7 +949,7 @@ void generic_motor_ISR(
 				    gMotorVars[mtrNum].IqRef_A =
 				            VIRTUALSPRING_getIqRef_A(springHandle[mtrNum]);
 				}
-				else {
+				else if (gFlag_enableCan) {
 					if (mtrNum == HAL_MTR1) {
 						gMotorVars[mtrNum].IqRef_A = ECanaMboxes.MBOX1.MDL.all;
 					} else {
