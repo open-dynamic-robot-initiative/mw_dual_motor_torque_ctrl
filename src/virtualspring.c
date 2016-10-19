@@ -41,7 +41,6 @@ void VIRTUALSPRING_setup(VIRTUALSPRING_Handle vsHandle,
     VIRTUALSPRING_Obj *obj = (VIRTUALSPRING_Obj *) vsHandle;
 
     obj->enabled = false;
-    obj->last_enabled = false;
     obj->flagResetOffset = false;
     obj->encoderOffset = 0;
     obj->equilibriumPosition = 0;
@@ -58,8 +57,9 @@ void VIRTUALSPRING_run(VIRTUALSPRING_Handle vsHandle, _iq motorPosition_mrev)
 {
     VIRTUALSPRING_Obj *spring = (VIRTUALSPRING_Obj *) vsHandle;
 
-    // save the current enabled state to detect changes
-    spring->last_enabled = spring->enabled;
+    // First check if the spring is enabled.
+    if (!spring->enabled)
+    	return;
 
     // reset positon offset if flag is set
     if (spring->flagResetOffset) {

@@ -176,6 +176,7 @@ ST_Handle       stHandle[2];    //!< the handles for the SpinTAC objects
 VIRTUALSPRING_Handle springHandle[2];
 VIRTUALSPRING_Obj spring[2];
 
+bool gFlag_enableVirtualSpring[2] = {false, false};
 bool gFlag_enableCan = true;
 
 uint16_t gLEDcnt[2] = {0, 0};
@@ -701,6 +702,8 @@ void main(void)
 				// enable PWMs and set the speed reference
 				if(gMotorVars[mtrNum].Flag_Run_Identify)
 				{
+					bool vspringChanged;
+
 					// update estimator state
 					EST_updateState(estHandle[mtrNum], 0);
 
@@ -711,6 +714,21 @@ void main(void)
 					// correctly in ROM, so this function fixes that ROM bug.
 					softwareUpdate1p6(estHandle[mtrNum], &gUserParams[mtrNum]);
 #endif
+
+					vspringChanged = VIRTUALSPRING_setEnabled(
+							springHandle[mtrNum],
+							gFlag_enableVirtualSpring[mtrNum]);
+					if (vspringChanged)
+					{
+						if (VIRTUALSPRING_isEnabled(springHandle[mtrNum])) {
+							// if virtual spring mode is just activated, reset
+							// position offset
+							VIRTUALSPRING_scheduleResetOffset(springHandle[mtrNum]);
+						} else {
+							// if it is just disabled, set IqRef to 0
+							gMotorVars[mtrNum].IqRef_A = 0;
+						}
+					}
 
 					// enable the PWM
 					HAL_enablePwm(halHandleMtr[mtrNum]);
@@ -930,17 +948,6 @@ void generic_motor_ISR(
 			{
 				// Reset the Speed execution counter.
 				stCntSpeed[mtrNum] = 0;
-
-				// TODO: Is it easily possible to remove (with #ifdef) all virtual spring stuff for Flash build?
-
-				// If virtual spring mode is deactivated, reset IqRef to 0
-				if (VIRTUALSPRING_isJustDisabled(springHandle[mtrNum])) {
-				    gMotorVars[mtrNum].IqRef_A = 0;
-				}
-				// If virtual spring mode is activated, reset position offset
-				else if (VIRTUALSPRING_isJustEnabled(springHandle[mtrNum])) {
-				    VIRTUALSPRING_scheduleResetOffset(springHandle[mtrNum]);
-				}
 
 				// If spring is enabled, set IqRef based on it
 				if (VIRTUALSPRING_isEnabled(springHandle[mtrNum])) {

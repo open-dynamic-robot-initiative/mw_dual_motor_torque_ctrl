@@ -34,9 +34,6 @@ typedef struct _VIRTUALSPRING_Obj_ {
     //! Set true to activate virtual spring mode instead of direct current control.
     bool enabled;
 
-    //! State of `enabled` in the last iteration. Used to detect changes.
-    bool last_enabled;
-
     //! When set true, position offset of spring is reset on next iteration.
     bool flagResetOffset;
 
@@ -84,6 +81,21 @@ extern void VIRTUALSPRING_run(VIRTUALSPRING_Handle vsHandle,
 //! Get the Iq reference value based on spring deflection.
 extern _iq VIRTUALSPRING_getIqRef_A(VIRTUALSPRING_Handle vsHandle);
 
+//! \brief Enable or disable the virtual spring.
+//! \param vsHandle Virtual spring handle
+//! \param enabled Set true to enable, false to disable.
+//! \returns True if the state changed (i.e. was previously disabled and is now
+//!          enabled or vice-versa), false if not.
+inline bool VIRTUALSPRING_setEnabled(VIRTUALSPRING_Handle vsHandle,
+		bool enabled)
+{
+    VIRTUALSPRING_Obj *spring = (VIRTUALSPRING_Obj *) vsHandle;
+
+    bool changed = (spring->enabled != enabled);
+    spring->enabled = enabled;
+
+    return changed;
+}
 
 //! Check if virtual spring mode is enabled.
 inline bool VIRTUALSPRING_isEnabled(VIRTUALSPRING_Handle vsHandle)
@@ -93,25 +105,6 @@ inline bool VIRTUALSPRING_isEnabled(VIRTUALSPRING_Handle vsHandle)
     return spring->enabled;
 }
 
-//! Check if virtual spring mode got just enabled (i.e. was disabled during the
-//! last call of VIRTUALSPRING_run())
-inline bool VIRTUALSPRING_isJustEnabled(VIRTUALSPRING_Handle vsHandle)
-{
-    VIRTUALSPRING_Obj *spring = (VIRTUALSPRING_Obj *) vsHandle;
-
-    return spring->enabled && !spring->last_enabled;
-}
-
-//! Check if virtual spring mode got just disabled (i.e. was enabled during the
-//! last call of VIRTUALSPRING_run())
-inline bool VIRTUALSPRING_isJustDisabled(VIRTUALSPRING_Handle vsHandle)
-{
-    VIRTUALSPRING_Obj *spring = (VIRTUALSPRING_Obj *) vsHandle;
-
-    return !spring->enabled && spring->last_enabled;
-}
-
-
 //! Schedule reset of position offset (will be executed during next call of
 //! VIRTUALSPRING_run())
 inline void VIRTUALSPRING_scheduleResetOffset(VIRTUALSPRING_Handle vsHandle)
@@ -120,7 +113,6 @@ inline void VIRTUALSPRING_scheduleResetOffset(VIRTUALSPRING_Handle vsHandle)
 
     spring->flagResetOffset = true;
 }
-
 
 
 #ifdef __cplusplus
