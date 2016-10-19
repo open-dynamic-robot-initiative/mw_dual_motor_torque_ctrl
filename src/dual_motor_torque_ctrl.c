@@ -576,25 +576,6 @@ void main(void)
 				GPIO_Direction_Output);
 	}
 
-	// initialize SpinTAC Velocity Control watch window variables
-	gMotorVars[HAL_MTR1].SpinTAC.VelCtlBw_radps = STVELCTL_getBandwidth_radps(
-			st_obj[HAL_MTR1].velCtlHandle);
-	gMotorVars[HAL_MTR2].SpinTAC.VelCtlBw_radps = STVELCTL_getBandwidth_radps(
-			st_obj[HAL_MTR2].velCtlHandle);
-	// initialize the watch window with maximum and minimum Iq reference
-	gMotorVars[HAL_MTR1].SpinTAC.VelCtlOutputMax_A = _IQmpy(
-			STVELCTL_getOutputMaximum(st_obj[HAL_MTR1].velCtlHandle),
-			_IQ(gUserParams[HAL_MTR1].iqFullScaleCurrent_A));
-	gMotorVars[HAL_MTR1].SpinTAC.VelCtlOutputMin_A = _IQmpy(
-			STVELCTL_getOutputMinimum(st_obj[HAL_MTR1].velCtlHandle),
-			_IQ(gUserParams[HAL_MTR1].iqFullScaleCurrent_A));
-	gMotorVars[HAL_MTR2].SpinTAC.VelCtlOutputMax_A = _IQmpy(
-			STVELCTL_getOutputMaximum(st_obj[HAL_MTR2].velCtlHandle),
-			_IQ(gUserParams[HAL_MTR2].iqFullScaleCurrent_A));
-	gMotorVars[HAL_MTR2].SpinTAC.VelCtlOutputMin_A = _IQmpy(
-			STVELCTL_getOutputMinimum(st_obj[HAL_MTR2].velCtlHandle),
-			_IQ(gUserParams[HAL_MTR2].iqFullScaleCurrent_A));
-
 	// enable the system by default
 	gMotorVars[HAL_MTR1].Flag_enableSys = true;
 
@@ -732,20 +713,6 @@ void main(void)
 
 					// enable the PWM
 					HAL_enablePwm(halHandleMtr[mtrNum]);
-
-					// enable SpinTAC Velocity Control
-					STVELCTL_setEnable(st_obj[mtrNum].velCtlHandle, true);
-					// provide bandwidth setting to SpinTAC Velocity Control
-					STVELCTL_setBandwidth_radps(st_obj[mtrNum].velCtlHandle,
-							gMotorVars[mtrNum].SpinTAC.VelCtlBw_radps);
-					// provide output maximum and minimum setting to SpinTAC
-					// Velocity Control
-					STVELCTL_setOutputMaximums(
-							st_obj[mtrNum].velCtlHandle,
-							_IQmpy(gMotorVars[mtrNum].SpinTAC.VelCtlOutputMax_A,
-									gCurrent_A_to_pu_sf[mtrNum]),
-							_IQmpy(gMotorVars[mtrNum].SpinTAC.VelCtlOutputMin_A,
-									gCurrent_A_to_pu_sf[mtrNum]));
 				}
 				else  // Flag_enableSys is set AND Flag_Run_Identify is not set
 				{
@@ -763,14 +730,6 @@ void main(void)
 					// clear Id and Iq references
 					gIdq_ref_pu[mtrNum].value[0] = _IQ(0.0);
 					gIdq_ref_pu[mtrNum].value[1] = _IQ(0.0);
-
-					// place SpinTAC Velocity Control into reset
-					STVELCTL_setEnable(st_obj[mtrNum].velCtlHandle, false);
-					// set SpinTAC Velocity Move start & end velocity to 0
-					STVELMOVE_setVelocityEnd(
-					        st_obj[mtrNum].velMoveHandle, _IQ(0.0));
-					STVELMOVE_setVelocityStart(
-					        st_obj[mtrNum].velMoveHandle, _IQ(0.0));
 				}
 
 				// update the global variables
@@ -1493,40 +1452,6 @@ void updateGlobalVariables(EST_Handle handle, const uint_least8_t mtrNum)
 	gMotorVars[mtrNum].Is_A =
 			_IQsqrt(_IQmpy(gMotorVars[mtrNum].Id_A, gMotorVars[mtrNum].Id_A)
 			+ _IQmpy(gMotorVars[mtrNum].Iq_A, gMotorVars[mtrNum].Iq_A));
-
-	// gets the Velocity Controller status
-	gMotorVars[mtrNum].SpinTAC.VelCtlStatus = STVELCTL_getStatus(
-			st_obj[mtrNum].velCtlHandle);
-
-	// get the inertia setting
-	gMotorVars[mtrNum].SpinTAC.InertiaEstimate_Aperkrpm = _IQmpy(
-			STVELCTL_getInertia(st_obj[mtrNum].velCtlHandle),
-			_IQ(((float_t)gUserParams[mtrNum].motor_numPolePairs
-					/ (0.001 * 60.0 * gUserParams[mtrNum].iqFullScaleFreq_Hz))
-					* gUserParams[mtrNum].iqFullScaleCurrent_A));
-
-	// get the friction setting
-	gMotorVars[mtrNum].SpinTAC.FrictionEstimate_Aperkrpm = _IQmpy(
-			STVELCTL_getFriction(st_obj[mtrNum].velCtlHandle),
-			_IQ(((float_t)gUserParams[mtrNum].motor_numPolePairs
-					/ (0.001 * 60.0 * gUserParams[mtrNum].iqFullScaleFreq_Hz))
-					* gUserParams[mtrNum].iqFullScaleCurrent_A));
-
-	// get the Velocity Controller error
-	gMotorVars[mtrNum].SpinTAC.VelCtlErrorID =
-			STVELCTL_getErrorID(st_obj[mtrNum].velCtlHandle);
-
-	// get the Velocity Move status
-	gMotorVars[mtrNum].SpinTAC.VelMoveStatus =
-			STVELMOVE_getStatus(st_obj[mtrNum].velMoveHandle);
-
-	// get the Velocity Move profile time
-	gMotorVars[mtrNum].SpinTAC.VelMoveTime_ticks =
-			STVELMOVE_getProfileTime_tick(st_obj[mtrNum].velMoveHandle);
-
-	// get the Velocity Move error
-	gMotorVars[mtrNum].SpinTAC.VelMoveErrorID =
-			STVELMOVE_getErrorID(st_obj[mtrNum].velMoveHandle);
 
 	// get the Position Converter error
 	gMotorVars[mtrNum].SpinTAC.PosConvErrorID =
