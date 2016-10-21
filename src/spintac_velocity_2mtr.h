@@ -124,77 +124,29 @@ extern "C" {
 //! \brief GLOBAL VARIABLE INITIALIZATION
 // **************************************************************************
 //! \brief Initalization values of SpinTAC global variables
-#define ST_VARS_DEFAULTS_MTR1 {false, \
-		                       ST_VEL_ID_IDLE, \
-		                       0, \
-     		                  0, \
-	                           0, \
-	                           0, \
-	                           0, \
-	                           true, \
-	                           ST_CTL_IDLE, \
-                               _IQ20(USER_SYSTEM_BANDWIDTH), \
-                               _IQ24(USER_MOTOR_MAX_CURRENT), \
-                               -_IQ24(USER_MOTOR_MAX_CURRENT), \
-                               0, \
-                               ST_MOVE_IDLE, \
-                               ST_MOVE_CUR_STCRV, \
-                               0, \
-                               0, \
-                               ST_PLAN_STOP, \
-                               ST_PLAN_IDLE, \
-                               0, \
-                               0, \
-                               0, \
-                               0}
+#define ST_VARS_DEFAULTS_MTR1 {0}
 
-#define ST_VARS_DEFAULTS_MTR2 {false, \
-		                       ST_VEL_ID_IDLE, \
-		                       0, \
-     		                   0, \
-	                           0, \
-	                           0, \
-	                           0, \
-	                           true, \
-	                           ST_CTL_IDLE, \
-                               _IQ20(USER_SYSTEM_BANDWIDTH_2), \
-                               _IQ24(USER_MOTOR_MAX_CURRENT_2), \
-                               -_IQ24(USER_MOTOR_MAX_CURRENT_2), \
-                               0, \
-                               ST_MOVE_IDLE, \
-                               ST_MOVE_CUR_STCRV, \
-                               0, \
-                               0, \
-                               ST_PLAN_STOP, \
-                               ST_PLAN_IDLE, \
-                               0, \
-                               0, \
-                               0, \
-                               0}
+#define ST_VARS_DEFAULTS_MTR2 {0}
 // **************************************************************************
 // the typedefs
 
 //! \brief Defines the velocity components of SpinTAC (ST)
 //!
+//! This structure is quite stupid with only one element. Keep it nonetheless so
+//! that it remains compatible with the GUI, which expects the motor position in
+//! st_obj.vel.conv.Pos_mrev
 typedef struct _VEL_Params_t
 {
     ST_PosConv_t conv;    //!< the position converter (ST_PosConv) object
-    ST_VelCtl_t	 ctl;     //!< the velocity controller (ST_VelCtl) object
-    ST_VelMove_t move;    //!< the velocity profile generator (ST_VelMove) object
-    ST_VelPlan_t plan;    //!< the velocity motion sequence generator (ST_VelPlan) object
-    ST_VelId_t   id;      //!< the velocity identify (ST_VelId) object
 } VEL_Params_t;
 
 //! \brief Defines the SpinTAC (ST) object
 //!
 typedef struct _ST_Obj
 {
-	VEL_Params_t	  vel;              //!< the velocity components of the SpinTAC (ST) object
+	//! Contains the PosConv object. Exists for compatibility with GUI.
+	VEL_Params_t	  vel;
 	ST_Ver_t          version;     		//!< the version (ST_Ver) object
-	ST_VELID_Handle   velIdHandle;      //!< Handle for Velocity Identify (ST_VelId)
-	ST_VELCTL_Handle  velCtlHandle;     //!< Handle for Velocity Controller (ST_VelCtl)
-	ST_VELMOVE_Handle velMoveHandle;    //!< Handle for Velocity Move (ST_VelMove)
-	ST_VELPLAN_Handle velPlanHandle;    //!< Handle for Velocity Plan (ST_VelPlan)
 	ST_POSCONV_Handle posConvHandle;    //!< Handle for Position Converter (ST_PosConv)
 	ST_VER_Handle     versionHandle;    //!< Handle for Version (ST_Ver)
 } ST_Obj;
@@ -203,41 +155,10 @@ typedef struct _ST_Obj
 //!
 typedef struct _ST_Obj_ *ST_Handle; // SpinTAC Velocity Controller Handle
 
-//! \brief Enumeration for the control of the velocity motion state machine (SpinTAC Velocity Plan)
-//!
-typedef enum
-{
-  ST_PLAN_STOP = 0,    //!< stops the current motion sequence
-  ST_PLAN_START,       //!< starts the current motion sequence
-  ST_PLAN_PAUSE        //!< pauses the current motion sequence
-} ST_PlanButton_e;
-
 //! \brief Defines the SpinTAC (ST) global variables
 //!
 typedef struct _ST_Vars_t
 {
-    bool               VelIdRun;                 //!< controls the operation of the Velocity Identify (ST_VelId)
-    ST_VelIdStatus_e   VelIdStatus;              //!< status of Velocity Identify (ST_VelId)
-    _iq24              VelIdGoalSpeed_krpm;      //!< sets the goal speed of Velocity Identify (ST_VelId)
-    _iq24              VelIdTorqueRampTime_sec;  //!< sets the rate at which torque is applied during Identification (ST_VelId)
-    _iq24              InertiaEstimate_Aperkrpm; //!< displays the inertia estimated by Velocity Identify (ST_VelId) and used by Velocity Controller (ST_VelCtl)
-    _iq24              FrictionEstimate_Aperkrpm;//!< displays the friction estimated by Velocity Identify (ST_VelId) and used by Velocity Controller (ST_VelCtl)
-    uint16_t           VelIdErrorID;             //!< displays the error seen by Velocity Identify (ST_VelId)
-    bool               VelCtlEnb;                //!< selects the velocity controller to use { true: SpinTAC false: PI }
-    ST_CtlStatus_e     VelCtlStatus;             //!< status of Velocity Controller (ST_VelCtl)
-    _iq20              VelCtlBw_radps;           //!< sets the tuning (Bw_radps) of the Velocity Controller (ST_VelCtl)
-    _iq24              VelCtlOutputMax_A;        //!< sets the maximum amount of current the Velocity Controller (ST_VelCtl) will supply as Iq reference
-    _iq24              VelCtlOutputMin_A;        //!< sets the minimum amount of current the Velocity Controller (ST_VelCtl) will supply as Iq reference
-    uint16_t           VelCtlErrorID;            //!< displays the error seen by Velocity Controller (ST_VelCtl)
-    ST_MoveStatus_e    VelMoveStatus;            //!< status of Velocity Move (ST_VelMove)
-    ST_MoveCurveType_e VelMoveCurveType;         //!< selects the curve type used by Velocity Move (ST_VelMove)
-    int32_t            VelMoveTime_ticks;        //!< displys the time that the current profile will take { unit: [ticks] } (ST_VelMove)
-    uint16_t           VelMoveErrorID;           //!< displays the error seen by Velocity Move (ST_VelMove)
-    ST_PlanButton_e    VelPlanRun;               //!< contols the operation of Velocity Plan (ST_VelPlan)
-    ST_PlanStatus_e    VelPlanStatus;            //!< status of Velocity Plan (ST_VelPlan)
-    uint16_t           VelPlanErrorID;           //!< displays the error seen by Velocity Plan (ST_VelPlan)
-    uint16_t           VelPlanCfgErrorIdx;       //!< displays which index caused a configuration error in Velocity Plan (ST_VelPlan)
-    uint16_t           VelPlanCfgErrorCode;      //!< displays the specific configuration error in Velocity Plan (ST_VelPlan)
     uint16_t           PosConvErrorID;           //!< displays the error seen by the Position Converter (ST_PosConv)
 } ST_Vars_t;
 
@@ -257,14 +178,6 @@ inline ST_Handle ST_init(void *pMemory, const size_t numBytes)
 	handle = (ST_Handle)pMemory;	// assign the handle
 	obj = (ST_Obj *)handle;		// assign the object
 
-	// init the ST VelId object
-	//obj->velIdHandle = STVELID_init(&obj->vel.id, sizeof(ST_VelId_t));
-	// init the ST VelCtl object
-	//obj->velCtlHandle = STVELCTL_init(&obj->vel.ctl, sizeof(ST_VelCtl_t));
-	// init the ST VelMove object
-	//obj->velMoveHandle = STVELMOVE_init(&obj->vel.move, sizeof(ST_VelMove_t));
-	// init the ST VelPlan object
-	//obj->velPlanHandle = STVELPLAN_init(&obj->vel.plan, sizeof(ST_VelPlan_t));
 	// init the ST PosConv object
 	obj->posConvHandle = STPOSCONV_init(&obj->vel.conv, sizeof(ST_PosConv_t));
 	// get the ST Version object
