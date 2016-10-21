@@ -696,9 +696,11 @@ void main(void)
 					softwareUpdate1p6(estHandle[mtrNum], &gUserParams[mtrNum]);
 #endif
 
+					// Update status of the virtual spring
 					vspringChanged = VIRTUALSPRING_setEnabled(
 							springHandle[mtrNum],
 							gFlag_enableVirtualSpring[mtrNum]);
+					// ...and make some adjustments if it changed
 					if (vspringChanged)
 					{
 						if (VIRTUALSPRING_isEnabled(springHandle[mtrNum])) {
@@ -924,6 +926,9 @@ void generic_motor_ISR(
 				}
 
 
+				gIdq_ref_pu[mtrNum].value[0] = _IQmpy(
+				        gMotorVars[mtrNum].IdRef_A,
+				        _IQ(1.0 / USER_IQ_FULL_SCALE_CURRENT_A));
 				gIdq_ref_pu[mtrNum].value[1] = _IQmpy(
 				        gMotorVars[mtrNum].IqRef_A,
 				        _IQ(1.0 / USER_IQ_FULL_SCALE_CURRENT_A));
