@@ -213,8 +213,6 @@ _iq gSpeed_krpm_to_pu_sf[2];
 
 _iq gSpeed_pu_to_krpm_sf[2];
 
-_iq gSpeed_hz_to_krpm_sf[2];
-
 _iq gCurrent_A_to_pu_sf[2];
 
 //uint32_t seq_counter = 0;
@@ -408,20 +406,8 @@ void main(void)
 					/ ((float_t)gUserParams[mtrNum].motor_numPolePairs
 					        * 1000.0));
 
-			gSpeed_hz_to_krpm_sf[mtrNum] = _IQ(
-			        60.0
-			        / (float_t)gUserParams[mtrNum].motor_numPolePairs
-					/ 1000.0);
-
 			gCurrent_A_to_pu_sf[mtrNum] = _IQ(
 					1.0 / gUserParams[mtrNum].iqFullScaleCurrent_A);
-
-			// initialize the speed reference in kilo RPM where base speed is
-			// USER_IQ_FULL_SCALE_FREQ_Hz.
-			// Set 10 Hz electrical frequency as initial value, so the kRPM
-			// value would be: 10 * 60 / motor pole pairs / 1000.
-			gMotorVars[mtrNum].SpeedRef_krpm = _IQmpy(
-					_IQ(10.0), gSpeed_hz_to_krpm_sf[mtrNum]);
 
 			// disable Rs recalculation
 			EST_setFlag_enableRsRecalc(estHandle[mtrNum], false);
@@ -741,11 +727,6 @@ void main(void)
 				EST_setFlag_enableForceAngle(estHandle[mtrNum],
 						gMotorVars[mtrNum].Flag_enableForceAngle);
 
-				// set target speed
-				gMotorVars[mtrNum].SpeedRef_pu = _IQmpy(
-						gMotorVars[mtrNum].SpeedRef_krpm,
-						gSpeed_krpm_to_pu_sf[mtrNum]);
-
 #ifdef DRV8301_SPI
 				HAL_writeDrvData(
 				        halHandleMtr[mtrNum], &gDrvSpi8301Vars[mtrNum]);
@@ -903,7 +884,6 @@ void generic_motor_ISR(
 			// When appropriate, update the current reference.
 			// This mechanism provides the decimation for the upper level
 			// control loop.
-			// FIXME: This is using the wrong decimation
 			if(++stCntSpeed[mtrNum]
 			              >= gUserParams[mtrNum].numCtrlTicksPerSpeedTick)
 			{

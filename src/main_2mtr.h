@@ -96,119 +96,119 @@
 //! \brief Initialization values of global variables
 //!
 #define MOTOR_Vars_INIT_Mtr1  { \
-		false, \
-		false, \
-		false, \
-		true, \
-		false, \
-		false, \
-		true, \
-		true, \
-		false, \
-		false, \
-		true, \
-		CTRL_State_Idle, \
-		EST_State_Idle, \
-		USER_ErrorCode_NoError, \
-		{0, CTRL_TargetProc_Unknown, 0, 0}, \
-		_IQ(0.0), \
-		_IQ(0.0), \
-		_IQ(0.0), \
-		_IQ(0.1), \
-		_IQ(0.0), \
-		_IQ(0.2), \
-		_IQ20(500.0), \
-		_IQ(0.0), \
-		_IQ(USER_MAX_VS_MAG_PU), \
-		_IQ(0.1 * USER_MOTOR_MAX_CURRENT), \
-		400, \
-		_IQ(0.0), \
-		_IQ(0.0), \
-		0.0, \
-		0.0, \
-		0.0, \
-		0.0, \
-		0.0, \
-		0.0, \
-		0.0, \
-		0.0, \
-		_IQ(0.0), \
-		_IQ(0.0), \
-		_IQ(0.0), \
-		0.0, \
-		0.0, \
-		_IQ(0.0), \
-		_IQ(0.0), \
-		_IQ(0.0), \
-		_IQ(0.0), \
-		_IQ(0.0), \
-		_IQ(0.0), \
-		_IQ(0.0), \
-		_IQ(0.8 * USER_MAX_VS_MAG_PU), \
-		_IQ(0.0), \
-		_IQ(0.0), \
-		_IQ(0.0), \
-		_IQ(0.0), \
-		{0, 0, 0}, \
-		{0, 0, 0}, \
+		false,  /*  Flag_enableSys */ \
+		false,  /*  Flag_runIdentify */ \
+		false,  /*  Flag_MotorIdentified */ \
+		true,   /*  Flag_enableForceAngle */ \
+		/* false,  // Flag_enableFieldWeakening */ \
+		/* false,  // Flag_enableRsRecalc */ \
+		/* true,   // Flag_enableUserParams */ \
+		true,   /*  Flag_enableOffsetRecalc */ \
+		/* false,  // Flag_enablePowerWrap */ \
+		/* false,  // Flag_enableSpeedCtrl */ \
+		true,   /*  Flag_enableAlignment */ \
+		/* CTRL_State_Idle, // CtrlState; */ \
+		/* EST_State_Idle, // EstState; */ \
+		/* USER_ErrorCode_NoError, // UserErrorCode; */ \
+		/* {0, CTRL_TargetProc_Unknown, 0, 0}, // CtrlVersion */ \
+		_IQ(0.0), /*  IdRef_A */ \
+		_IQ(0.0), /*  IqRef_A */ \
+		/* _IQ(0.0), // SpeedRef_pu */ \
+		/* _IQ(0.1), // SpeedRef_krpm */ \
+		/* _IQ(0.0), // SpeedTraj_krpm */ \
+		/* _IQ(0.2), // MaxAccel_krpmps */ \
+		/* _IQ20(500.0), // MaxJrk_krpmps2 */ \
+		_IQ(0.0), /*  Speed_krpm */ \
+		/* _IQ(USER_MAX_VS_MAG_PU),  // OverModulation */ \
+		/* _IQ(0.1 * USER_MOTOR_MAX_CURRENT), // RsOnlineCurrent_A */ \
+		/* 400, // SvgenMaxModulation_ticks */ \
+		/* _IQ(0.0), // Flux_Wb */ \
+		_IQ(0.0), /*  Torque_Nm */ \
+		/* 0.0,  // MagnCurr_A */ \
+		/* 0.0,  // Rr_Ohm */ \
+		/* 0.0,  // Rs_Ohm */ \
+		0.0,  /*  RsOnline_Ohm */ \
+		/* 0.0,  // Lsd_H */ \
+		/* 0.0,  // Lsq_H */ \
+		/* 0.0,  // Flux_VpHz */ \
+		/* 0.0, */ \
+		/* _IQ(0.0), */ \
+		/* _IQ(0.0), */ \
+		/* _IQ(0.0), */ \
+		/* 0.0, */ \
+		/* 0.0, */ \
+		/* _IQ(0.0),  // Kp_spd */ \
+		/* _IQ(0.0),  // Ki_spd */ \
+		_IQ(0.0),  /*  Kp_Idq */ \
+		_IQ(0.0),  /*  Ki_Idq */ \
+		_IQ(0.0),  /*  Vd */ \
+		_IQ(0.0),  /*  Vq */ \
+		_IQ(0.0),  /*  Vs */ \
+		_IQ(0.8 * USER_MAX_VS_MAG_PU),  /*  VsRef */ \
+		_IQ(0.0),  /*  VdcBus_kV */ \
+		_IQ(0.0),  /*  Id_A */ \
+		_IQ(0.0),  /*  Iq_A */ \
+		_IQ(0.0),  /*  Is_A */ \
+		{0, 0, 0},  /*  I_bias */ \
+		{0, 0, 0},  /* V_bias */ \
 		ST_VARS_DEFAULTS_MTR1}
 
 #define MOTOR_Vars_INIT_Mtr2  { \
-		false, \
-		false, \
-		false, \
-		true, \
-		false, \
-		false, \
-		true, \
-		true, \
-		false, \
-		false, \
-		true, \
-		CTRL_State_Idle, \
-		EST_State_Idle, \
-		USER_ErrorCode_NoError, \
-		{0, CTRL_TargetProc_Unknown, 0, 0}, \
-		_IQ(0.0), \
-		_IQ(0.0), \
-		_IQ(0.0), \
-		_IQ(0.1), \
-		_IQ(0.0), \
-		_IQ(0.2), \
-		_IQ20(500.0), \
-		_IQ(0.0), \
-		_IQ(USER_MAX_VS_MAG_PU_2), \
-		_IQ(0.1 * USER_MOTOR_MAX_CURRENT_2), \
-		400, \
-		_IQ(0.0), \
-		_IQ(0.0), \
-		0.0, \
-		0.0, \
-		0.0, \
-		0.0, \
-		0.0, \
-		0.0, \
-		0.0, \
-		0.0, \
-		_IQ(0.0), \
-		_IQ(0.0), \
-		_IQ(0.0), \
-		0.0, \
-		0.0, \
-		_IQ(0.0), \
-		_IQ(0.0), \
-		_IQ(0.0), \
-		_IQ(0.0), \
-		_IQ(0.0), \
-		_IQ(0.0), \
-		_IQ(0.0), \
-		_IQ(0.8 * USER_MAX_VS_MAG_PU_2), \
-		_IQ(0.0), \
-		_IQ(0.0), \
-		_IQ(0.0), \
-		_IQ(0.0), \
-		{0, 0, 0}, \
-		{0, 0, 0}, \
+		false,  /*  Flag_enableSys */ \
+		false,  /*  Flag_runIdentify */ \
+		false,  /*  Flag_MotorIdentified */ \
+		true,   /*  Flag_enableForceAngle */ \
+		/* false,  // Flag_enableFieldWeakening */ \
+		/* false,  // Flag_enableRsRecalc */ \
+		/* true,   // Flag_enableUserParams */ \
+		true,   /*  Flag_enableOffsetRecalc */ \
+		/* false,  // Flag_enablePowerWrap */ \
+		/* false,  // Flag_enableSpeedCtrl */ \
+		true,   /*  Flag_enableAlignment */ \
+		/* CTRL_State_Idle, // CtrlState; */ \
+		/* EST_State_Idle, // EstState; */ \
+		/* USER_ErrorCode_NoError, // UserErrorCode; */ \
+		/* {0, CTRL_TargetProc_Unknown, 0, 0}, // CtrlVersion */ \
+		_IQ(0.0), /*  IdRef_A */ \
+		_IQ(0.0), /*  IqRef_A */ \
+		/* _IQ(0.0), // SpeedRef_pu */ \
+		/* _IQ(0.1), // SpeedRef_krpm */ \
+		/* _IQ(0.0), // SpeedTraj_krpm */ \
+		/* _IQ(0.2), // MaxAccel_krpmps */ \
+		/* _IQ20(500.0), // MaxJrk_krpmps2 */ \
+		_IQ(0.0), /*  Speed_krpm */ \
+		/* _IQ(USER_MAX_VS_MAG_PU_2),  // OverModulation */ \
+		/* _IQ(0.1 * USER_MOTOR_MAX_CURRENT_2), // RsOnlineCurrent_A */ \
+		/* 400, // SvgenMaxModulation_ticks */ \
+		/* _IQ(0.0), // Flux_Wb */ \
+		_IQ(0.0), /*  Torque_Nm */ \
+		/* 0.0,  // MagnCurr_A */ \
+		/* 0.0,  // Rr_Ohm */ \
+		/* 0.0,  // Rs_Ohm */ \
+		0.0,  /*  RsOnline_Ohm */ \
+		/* 0.0,  // Lsd_H */ \
+		/* 0.0,  // Lsq_H */ \
+		/* 0.0,  // Flux_VpHz */ \
+		/* 0.0, */ \
+		/* _IQ(0.0), */ \
+		/* _IQ(0.0), */ \
+		/* _IQ(0.0), */ \
+		/* 0.0, */ \
+		/* 0.0, */ \
+		/* _IQ(0.0),  // Kp_spd */ \
+		/* _IQ(0.0),  // Ki_spd */ \
+		_IQ(0.0),  /*  Kp_Idq */ \
+		_IQ(0.0),  /*  Ki_Idq */ \
+		_IQ(0.0),  /*  Vd */ \
+		_IQ(0.0),  /*  Vq */ \
+		_IQ(0.0),  /*  Vs */ \
+		_IQ(0.8 * USER_MAX_VS_MAG_PU_2),  /*  VsRef */ \
+		_IQ(0.0),  /*  VdcBus_kV */ \
+		_IQ(0.0),  /*  Id_A */ \
+		_IQ(0.0),  /*  Iq_A */ \
+		_IQ(0.0),  /*  Is_A */ \
+		{0, 0, 0},  /*  I_bias */ \
+		{0, 0, 0},  /*  V_bias */ \
 		ST_VARS_DEFAULTS_MTR2}
 
 // **************************************************************************
@@ -220,52 +220,52 @@ typedef struct _MOTOR_Vars_t_
 	bool Flag_Run_Identify;
 	bool Flag_MotorIdentified;
 	bool Flag_enableForceAngle;
-	bool Flag_enableFieldWeakening;
-	bool Flag_enableRsRecalc;
-	bool Flag_enableUserParams;
+	//bool Flag_enableFieldWeakening;
+	//bool Flag_enableRsRecalc;
+	//bool Flag_enableUserParams;
 	bool Flag_enableOffsetcalc;
-	bool Flag_enablePowerWarp;
-	bool Flag_enableSpeedCtrl;
+	//bool Flag_enablePowerWarp;
+	//bool Flag_enableSpeedCtrl;
 	bool Flag_enableAlignment;
 
-	CTRL_State_e CtrlState;
-	EST_State_e EstState;
+	//CTRL_State_e CtrlState;
+	//EST_State_e EstState;
 
-	USER_ErrorCode_e UserErrorCode;
+	//USER_ErrorCode_e UserErrorCode;
 
-	CTRL_Version CtrlVersion;
+	//CTRL_Version CtrlVersion;
 
 	_iq IdRef_A;
 	_iq IqRef_A;
-	_iq SpeedRef_pu;
-	_iq SpeedRef_krpm;
-	_iq SpeedTraj_krpm;
-	_iq MaxAccel_krpmps;
-	_iq20 MaxJrk_krpmps2;
+	//_iq SpeedRef_pu;
+	//_iq SpeedRef_krpm;
+	//_iq SpeedTraj_krpm;
+	//_iq MaxAccel_krpmps;
+	//_iq20 MaxJrk_krpmps2;
 	_iq Speed_krpm;
-	_iq OverModulation;
-	_iq RsOnLineCurrent_A;
-	_iq SvgenMaxModulation_ticks;
-	_iq Flux_Wb;
-	_iq Torque_Nm;
+	//_iq OverModulation;
+	//_iq RsOnLineCurrent_A;
+	//_iq SvgenMaxModulation_ticks;
+	//_iq Flux_Wb;
+	_iq Torque_Nm; // TODO set this value?
 
-	float_t MagnCurr_A;
-	float_t Rr_Ohm;
-	float_t Rs_Ohm;
+	//float_t MagnCurr_A;
+	//float_t Rr_Ohm;
+	//float_t Rs_Ohm;
 	float_t RsOnLine_Ohm;
-	float_t Lsd_H;
-	float_t Lsq_H;
-	float_t Flux_VpHz;
+	//float_t Lsd_H;
+	//float_t Lsq_H;
+	//float_t Flux_VpHz;
 
-	float_t ipd_excFreq_Hz;
-	_iq     ipd_Kspd;
-	_iq     ipd_excMag_coarse_pu;
-	_iq     ipd_excMag_fine_pu;
-	float   ipd_waitTime_coarse_sec;
-	float   ipd_waitTime_fine_sec;
+	//float_t ipd_excFreq_Hz;
+	//_iq     ipd_Kspd;
+	//_iq     ipd_excMag_coarse_pu;
+	//_iq     ipd_excMag_fine_pu;
+	//float   ipd_waitTime_coarse_sec;
+	//float   ipd_waitTime_fine_sec;
 
-	_iq Kp_spd;
-	_iq Ki_spd;
+	//_iq Kp_spd;
+	//_iq Ki_spd;
 
 	_iq Kp_Idq;
 	_iq Ki_Idq;
@@ -373,13 +373,6 @@ void EST_setupEstIdleState(EST_Handle handle);
 #endif
 
 EST_Handle EST_init(void *pMemory, const size_t numBytes);
-
-//! \brief     Runs PowerWarp
-//! \param[in] handle     The estimator (EST) handle
-//! \param[in] Id_int_pu  The intermediate value along the Id trajectory in pu
-//! \param[in] Iq_pu      The measured Iq value in pu
-//! \return    The target value for the Id trajectory in pu
-_iq EST_runPowerWarp(EST_Handle handle, const _iq Id_int_pu, const _iq Iq_pu);
 
 
 //! \brief Motor ISR that can be used for both motors.

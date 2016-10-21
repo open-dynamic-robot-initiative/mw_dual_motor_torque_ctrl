@@ -14,7 +14,7 @@ expAdd ("gMotorVars[0].Is_A", getQValue(24));
 expAdd ("gMotorVars[0].VdcBus_kV", getQValue(24));
 expAdd ("pid[0]", getQValue(24));
 expAdd ("gPwmData[0]", getQValue(24));
-expAdd ("gDrvSpi8301Vars[0]");
+expAdd ("gDrvSpi8305Vars[0]");
 
 expAdd ("gMotorVars[1].Flag_Run_Identify", getDecimal());
 expAdd ("gMotorVars[1].Flag_enableOffsetcalc", getDecimal());
@@ -30,4 +30,4 @@ expAdd ("gMotorVars[1].Is_A", getQValue(24));
 expAdd ("gMotorVars[1].VdcBus_kV", getQValue(24));
 expAdd ("pid[1]", getQValue(24));
 expAdd ("gPwmData[1]", getQValue(24));
-expAdd ("gDrvSpi8301Vars[1]");
+expAdd ("gDrvSpi8305Vars[1]");
