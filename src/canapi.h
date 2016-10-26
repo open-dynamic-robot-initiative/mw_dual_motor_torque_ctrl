@@ -24,14 +24,18 @@ extern "C" {
 // **************************************************************************
 // the defines
 
-// Bit masks specifying the mailboxes used for the various types of messages. We
-// have enough mailboxes available so that we can use a separate one for every
-// message type.
-// `CAN_MBOX_IN|OUT_XY = 1 << n` means that mailbox n is used for message type
-// XY.
-//
-// NOTE: Changing the mailbox number of a message also requires adjustments in
-// the code below!
+//! \name Mailbox Bitmasks
+//! \brief Bit masks specifying the mailboxes used for the various types of
+//! messages.
+//!
+//! We have enough mailboxes available so that we can use a separate one for
+//! every message type.
+//! `CAN_MBOX_IN|OUT_XY = 1 << n` means that mailbox n is used for message type
+//! XY.
+//!
+//! NOTE: Changing the mailbox number of a message also requires some
+//! adjustments in the code below!
+//! \{
 #define CAN_MBOX_OUT_STATUSMSG  (uint32_t) 1 << 15
 #define CAN_MBOX_OUT_Iq         (uint32_t) 1 << 14
 #define CAN_MBOX_OUT_ENC_POS    (uint32_t) 1 << 13
@@ -47,9 +51,12 @@ extern "C" {
 	| CAN_MBOX_OUT_ADC6 \
 	| CAN_MBOX_IN_COMMANDS \
 	| CAN_MBOX_IN_IqRef
+//! \}
 
 
-// Arbitration IDs of the different message types
+//! \name Arbitration IDs
+//! \brief Arbitration IDs of the different message types
+//! \{
 #define CAN_ID_COMMANDS   0x00
 #define CAN_ID_IqRef      0x05
 #define CAN_ID_STATUSMSG  0x10
@@ -57,9 +64,14 @@ extern "C" {
 #define CAN_ID_POS        0x30
 #define CAN_ID_SPEED      0x40
 #define CAN_ID_ADC6       0x50
+//! \}
 
 
-// COMMAND IDs
+//! Command IDs
+//! \brief IDs of the various commands that can be sent to the COMMANDS mailbox
+//!
+//! The ID is expected to be in the high bytes (MDH) of the frame.
+//! \{
 #define CAN_CMD_ENABLE_SYS 1
 #define CAN_CMD_ENABLE_MTR1 2
 #define CAN_CMD_ENABLE_MTR2 3
@@ -71,14 +83,26 @@ extern "C" {
 #define CAN_CMD_SEND_ADC6 15
 #define CAN_CMD_SEND_ALL 20
 #define CAN_CMD_SET_CAN_RECV_TIMEOUT 30
+//! \}
 
 
-// Error Codes
+//! \name Error Codes
+//! \anchor ErrorCodes
+//! \brief Possible Error Codes for the status message
+//! \{
+
+//! \brief No error
 #define CAN_ERROR_NO_ERROR 0
+//! \brief Encoder error too high
 #define CAN_ERROR_ENCODER 1
+//! \brief Timeout for receiving current references exceeded
 #define CAN_ERROR_CAN_RECV_TIMEOUT 2
-#define CAN_ERROR_CRIT_TEMP 3  // unused
+//! \brief Motor temperature reached critical value
+//! \note This is currently unused as no temperature sensing is done.
+#define CAN_ERROR_CRIT_TEMP 3  // currently unused
+//! \brief Some other error
 #define CAN_ERROR_OTHER 7
+//! \}
 
 
 
@@ -92,6 +116,7 @@ struct CAN_STATUSMSG_BITS {    // bits   description
    uint16_t motor1_ready:1;    // 2
    uint16_t motor2_enabled:1;  // 3
    uint16_t motor2_ready:1;    // 4
+   //! \see \ref ErrorCodes
    uint16_t error_code:3;      // 5-7
    uint16_t rsvd:8;            // 8-15  reserved
 };
