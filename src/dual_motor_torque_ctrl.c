@@ -226,6 +226,15 @@ uint32_t gStatusLedBlinkLastToggleTime = 0;
 //! Last time a status message was sent via CAN (based on gTimer0_stamp).
 uint32_t gCanLastStatusMsgTime = 0;
 
+//! Last time a IqRef message was received via CAN (based on gTimer0_stamp).
+uint32_t gCanLastReceivedIqRef_stamp = 0;
+
+//! Timeout for incoming IqRef messages.  If exceeded, error is set.  To disable
+//! timeout, set to 0.
+uint32_t gCanReceiveIqRefTimeout = 0;
+
+//! Mask for the CAN mailboxes. Only mailboxes that are enabled in the mask are
+//! allowed to send.
 uint32_t gEnabledCanMessages = 0;
 
 //! Errors that occured in the system.  gErrors.all == 0 if no errors occured.
@@ -615,6 +624,12 @@ void main(void)
 			HAL_turnLedOff(halHandle, LED_ONBOARD_BLUE);
 			HAL_turnLedOff(halHandle, LED_EXTERN_GREEN);
 
+			// Don't allow motors to be enabled while system is disabled
+			//FIXME maybe problem if enable sys and enable motor messages are sent directly in row?
+			gMotorVars[HAL_MTR1].Flag_Run_Identify = false;
+			gMotorVars[HAL_MTR2].Flag_Run_Identify = false;
+
+			//checkErrors();
 			maybeSendCanStatusMsg();
 		}
 
@@ -644,19 +659,15 @@ void main(void)
 			}
 
 
-			// Error checks
-			gErrors.bit.qep_error = (checkEncoderError(gQepIndexWatchdog[0]) || checkEncoderError(gQepIndexWatchdog[1]));
+			/*** Error Checks ***/
 
+			checkErrors();
+
+			// When there is an error, shut down the system to be safe
 			if (gErrors.all) {
-				// When there is an error, shut down the system to be safe
 				gMotorVars[HAL_MTR1].Flag_enableSys = false;
-				HAL_turnLedOn(halHandle, LED_ONBOARD_RED);
-				HAL_turnLedOn(halHandle, LED_EXTERN_RED);
-			} else {
-				HAL_turnLedOff(halHandle, LED_ONBOARD_RED);
-				HAL_turnLedOff(halHandle, LED_EXTERN_RED);
+				break; // immediately exit the enabled == true loop
 			}
-
 
 			// Send status message via CAN
 			maybeSendCanStatusMsg();
@@ -1126,6 +1137,9 @@ interrupt void can1_ISR()
 				gEnabledCanMessages = 0;
 			}
 			break;
+		case CAN_CMD_SET_CAN_RECV_TIMEOUT:
+			gCanReceiveIqRefTimeout = cmd_val;
+			break;
 		}
 
 		// Acknowledge interrupt
@@ -1488,12 +1502,18 @@ void setCanStatusMsg()
 	status.bit.motor1_ready = !gMotorVars[HAL_MTR1].Flag_enableAlignment;
 	status.bit.motor2_enabled = gMotorVars[HAL_MTR2].Flag_Run_Identify;
 	status.bit.motor2_ready = !gMotorVars[HAL_MTR2].Flag_enableAlignment;
-	if (gErrors.bit.qep_error)
+	if (gErrors.bit.qep_error) {
 		status.bit.error_code = CAN_ERROR_ENCODER;
-	else if (gErrors.bit.can_error)
-		status.bit.error_code = CAN_ERROR_CAN;
-	else
+	} else if (gErrors.bit.can_error) {
+		// There is not really a point in reporting this error, the message
+		// most likely won't come through.  So do it here for completeness but
+		// don't waste a separate error code on this.
+		status.bit.error_code = CAN_ERROR_OTHER;
+	} else if (gErrors.bit.can_recv_timeout) {
+		status.bit.error_code = CAN_ERROR_CAN_RECV_TIMEOUT;
+	} else {
 		status.bit.error_code = CAN_ERROR_NO_ERROR;
+	}
 
 	CAN_setStatusMsg(status);
 }
@@ -1627,6 +1647,43 @@ inline void genericQepIndexISR(const HAL_MtrSelect_e mtrNum)
 bool checkEncoderError(const QepIndexWatchdog_t qiwd)
 {
 	return abs(qiwd.indexError_counts) > QEP_MAX_INDEX_ERROR;
+}
+
+
+void checkErrors()
+{
+	//*** CAN Timout
+
+	// If new IqRef message was received via CAN, store the current time, so we
+	// can detect connection loss.
+	if (ECanaRegs.CANRMP.all & CAN_MBOX_IN_IqRef) {
+		// reset bit (have to write a 1 to get a 0)
+		ECanaRegs.CANRMP.all = CAN_MBOX_IN_IqRef;
+		gCanLastReceivedIqRef_stamp = gTimer0_stamp;
+	}
+
+	gErrors.bit.can_recv_timeout = (
+			(gMotorVars[0].Flag_Run_Identify || gMotorVars[1].Flag_Run_Identify)
+			&& gFlag_enableCan
+			&& gCanReceiveIqRefTimeout != 0
+			&& (gCanLastReceivedIqRef_stamp
+					< gTimer0_stamp - gCanReceiveIqRefTimeout)
+			);
+
+
+	//*** Encoder Error
+	gErrors.bit.qep_error = (checkEncoderError(gQepIndexWatchdog[0])
+			|| checkEncoderError(gQepIndexWatchdog[1]));
+
+	// set red LED
+	if (gErrors.all) {
+		HAL_turnLedOn(halHandle, LED_ONBOARD_RED);
+		HAL_turnLedOn(halHandle, LED_EXTERN_RED);
+	} else {
+		HAL_turnLedOff(halHandle, LED_ONBOARD_RED);
+		HAL_turnLedOff(halHandle, LED_EXTERN_RED);
+	}
+
 }
 
 //@} //defgroup

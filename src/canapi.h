@@ -70,12 +70,13 @@ extern "C" {
 #define CAN_CMD_SEND_VELOCITY 14
 #define CAN_CMD_SEND_ADC6 15
 #define CAN_CMD_SEND_ALL 20
+#define CAN_CMD_SET_CAN_RECV_TIMEOUT 30
 
 
 // Error Codes
 #define CAN_ERROR_NO_ERROR 0
 #define CAN_ERROR_ENCODER 1
-#define CAN_ERROR_CAN 2 // TODO is this usefull?
+#define CAN_ERROR_CAN_RECV_TIMEOUT 2
 #define CAN_ERROR_CRIT_TEMP 3  // unused
 #define CAN_ERROR_OTHER 7
 

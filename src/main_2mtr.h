@@ -292,7 +292,8 @@ typedef struct _MOTOR_Vars_t_
 struct ERROR_BITS {         // bits   description
 	uint16_t can_error:1;    // 0
 	uint16_t qep_error:1;    // 1
-	uint16_t rsvd:14;        // 1-15  reserved
+	uint16_t can_recv_timeout:1; // 2
+	uint16_t rsvd:13;        // 3-15  reserved
 };
 
 //! \brief Status message that allows integer or bit access.
@@ -407,6 +408,11 @@ interrupt void qep2IndexISR();
 inline void genericQepIndexISR(const HAL_MtrSelect_e mtrNum);
 //! \brief Check if the QEP error is too high.
 inline bool checkEncoderError(const QepIndexWatchdog_t);
+
+//! \brief Check if there is any error and set gErrors accordingly.
+//!
+//! Also turns the red LED on if there is an error.
+void checkErrors();
 
 
 //@} //defgroup
