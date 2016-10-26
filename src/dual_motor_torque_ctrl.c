@@ -83,7 +83,7 @@
 // the globals
 
 //! Used for various debugging stuff.
-uint32_t gFoobar = 0;
+//uint32_t gFoobar = 0;
 
 CLARKE_Handle   clarkeHandle_I[2];  //!< the handle for the current Clarke
 									//!< transform
@@ -639,13 +639,22 @@ void main(void)
 		{
 			uint_least8_t mtrNum = HAL_MTR1;
 
-
 			// Show system and motor status using the blue LED
 			if (gMotorVars[0].Flag_Run_Identify || gMotorVars[1].Flag_Run_Identify)
 			{
+				uint32_t blink_duration = TIMER0_FREQ_Hz / LED_BLINK_FREQ_Hz;
+
+				// blink faster while motors are aligned
+				if ((gMotorVars[0].Flag_Run_Identify
+						&& gMotorVars[0].Flag_enableAlignment)
+						|| (gMotorVars[1].Flag_Run_Identify
+								&& gMotorVars[1].Flag_enableAlignment)) {
+					blink_duration /= 4;
+				}
+
 				// toggle status LED
 				if(gStatusLedBlinkLastToggleTime
-						< (gTimer0_stamp - TIMER0_FREQ_Hz / LED_BLINK_FREQ_Hz))
+						< (gTimer0_stamp - blink_duration))
 				{
 					HAL_toggleLed(halHandle, LED_ONBOARD_BLUE);
 					HAL_toggleLed(halHandle, LED_EXTERN_GREEN);
@@ -658,9 +667,7 @@ void main(void)
 				HAL_turnLedOn(halHandle, LED_EXTERN_GREEN);
 			}
 
-
 			/*** Error Checks ***/
-
 			checkErrors();
 
 			// When there is an error, shut down the system to be safe
