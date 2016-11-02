@@ -65,6 +65,17 @@ extern "C" {
 // **************************************************************************
 // the defines
 
+//! \brief ROTATION UNIT MAXIMUMS
+// **************************************************************************
+//! \brief Defines the maximum and minimum value at which the Mechanical Revolution [MRev] will rollover.
+//! \brief The position signal produced by SpinTAC Position Converter is a sawtooth signal.
+//! \brief All SpinTAC Components need to be aware of the bounds of this signal.
+//! \brief When the position signal reaches the maximum value it will immediatly go to the minimum value.
+//! \brief The minimum value is the negative of the maximum value.
+#define ST_MREV_ROLLOVER _IQ(100.0)
+//#define ST_MREV_ROLLOVER_2 (100)  // use same value for both motors
+
+
 //! \brief SAMPLE TIME
 // **************************************************************************
 //! \brief Defines the number of interrupt ticks per SpinTAC tick
@@ -187,8 +198,8 @@ inline ST_Handle ST_init(void *pMemory, const size_t numBytes)
 }
 
 //! \brief      Setups SpinTAC Position Convert
-inline void ST_setupPosConv_mtr1(ST_Handle handle) {
-
+inline void ST_setupPosConv_mtr1(ST_Handle handle)
+{
 	// get object from the handle
 	ST_Obj *obj = (ST_Obj *)handle;
 
@@ -196,7 +207,7 @@ inline void ST_setupPosConv_mtr1(ST_Handle handle) {
 	STPOSCONV_setSampleTime_sec(obj->posConvHandle, _IQ24(ST_POS_CONV_SAMPLE_TIME));
 	STPOSCONV_setERevMaximums_erev(obj->posConvHandle, _IQ24(1.0), 0);
 	STPOSCONV_setUnitConversion(obj->posConvHandle, USER_IQ_FULL_SCALE_FREQ_Hz, ST_POS_CONV_SAMPLE_TIME, USER_MOTOR_NUM_POLE_PAIRS);
-	STPOSCONV_setMRevMaximum_mrev(obj->posConvHandle, _IQ24(10.0));
+	STPOSCONV_setMRevMaximum_mrev(obj->posConvHandle, ST_MREV_ROLLOVER);
 	STPOSCONV_setLowPassFilterTime_tick(obj->posConvHandle, 3);
 	if(USER_MOTOR_TYPE ==  MOTOR_Type_Induction) {
 		// The Slip Compensator is only needed for ACIM
@@ -205,8 +216,8 @@ inline void ST_setupPosConv_mtr1(ST_Handle handle) {
 	STPOSCONV_setEnable(obj->posConvHandle, true);
 }
 
-inline void ST_setupPosConv_mtr2(ST_Handle handle) {
-
+inline void ST_setupPosConv_mtr2(ST_Handle handle)
+{
 	// get object from the handle
 	ST_Obj *obj = (ST_Obj *)handle;
 
@@ -214,7 +225,7 @@ inline void ST_setupPosConv_mtr2(ST_Handle handle) {
 	STPOSCONV_setSampleTime_sec(obj->posConvHandle, _IQ24(ST_POS_CONV_SAMPLE_TIME_2));
 	STPOSCONV_setERevMaximums_erev(obj->posConvHandle, _IQ24(1.0), 0);
 	STPOSCONV_setUnitConversion(obj->posConvHandle, USER_IQ_FULL_SCALE_FREQ_Hz_2, ST_POS_CONV_SAMPLE_TIME_2, USER_MOTOR_NUM_POLE_PAIRS_2);
-	STPOSCONV_setMRevMaximum_mrev(obj->posConvHandle, _IQ24(10.0));
+	STPOSCONV_setMRevMaximum_mrev(obj->posConvHandle, ST_MREV_ROLLOVER);
 	STPOSCONV_setLowPassFilterTime_tick(obj->posConvHandle, 3);
 	if(USER_MOTOR_TYPE_2 ==  MOTOR_Type_Induction) {
 		// The Slip Compensator is only needed for ACIM
@@ -229,6 +240,18 @@ inline void ST_setupPosConv_mtr2(ST_Handle handle) {
 extern void ST_runPosConv(ST_Handle handle, ENC_Handle encHandle, SLIP_Handle slipHandle, MATH_vec2 *Idq_pu, MOTOR_Type_e motorType);
 #endif
 
+
+// since this function is missing in the spintac library:
+
+//! \brief      Gets the Mechanical Revolution Maximum (cfg.ROMax_mrev) for SpinTAC Position Converter
+//! \param[in]  handle    The handle for the SpinTAC Position Converter Object
+//! \return     _iq24     Mechanical Revolution Maximum { unit: [MRev] }
+static inline _iq24 STPOSCONV_getMRevMaximum_mrev(ST_POSCONV_Handle handle)
+{
+	ST_PosConv_t *obj = (ST_PosConv_t *)handle;
+
+	return(obj->cfg.ROMax_mrev);
+} // end of STPOSCONV_getMRevMaximum_mrev function
 
 
 #ifdef __cplusplus

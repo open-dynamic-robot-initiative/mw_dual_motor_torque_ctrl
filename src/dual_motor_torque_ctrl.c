@@ -487,7 +487,8 @@ void main(void)
 			springHandle[mtrNum] = VIRTUALSPRING_init(
 			        &spring[mtrNum], sizeof(spring[mtrNum]));
 			VIRTUALSPRING_setup(springHandle[mtrNum],
-			        10, _IQ(2.0), st_obj[mtrNum].vel.conv.cfg.ROMax_mrev);
+			        10, _IQ(2.0),
+					STPOSCONV_getMRevMaximum_mrev(st_obj[mtrNum].posConvHandle));
 
 		} // End of for loop
 	}
@@ -694,11 +695,8 @@ void main(void)
 			for(mtrNum=HAL_MTR1;mtrNum<=HAL_MTR2;mtrNum++)
 			{
 				// If the flag is set, set current position as zero offset
-				if (gFlag_resetZeroPositionOffset)
-				{
-					ST_Obj *obj = (ST_Obj*) stHandle[mtrNum];
-
-					gZeroPositionOffset[mtrNum] = STPOSCONV_getPosition_mrev(obj->posConvHandle);
+				if (gFlag_resetZeroPositionOffset) {
+					gZeroPositionOffset[mtrNum] = STPOSCONV_getPosition_mrev(st_obj[mtrNum].posConvHandle);
 				}
 
 				// If Flag_enableSys is set AND Flag_Run_Identify is set THEN
@@ -929,7 +927,7 @@ void generic_motor_ISR(
 				// If spring is enabled, set IqRef based on it
 				if (VIRTUALSPRING_isEnabled(springHandle[mtrNum])) {
 					VIRTUALSPRING_run(springHandle[mtrNum],
-							st_obj[mtrNum].vel.conv.Pos_mrev);
+							STPOSCONV_getPosition_mrev(st_obj[mtrNum].posConvHandle));
 				    gMotorVars[mtrNum].IqRef_A =
 				            VIRTUALSPRING_getIqRef_A(springHandle[mtrNum]);
 				}
@@ -1546,24 +1544,47 @@ void setCanStatusMsg()
 
 void setCanMotorData(const HAL_MtrSelect_e mtrNum)
 {
-	_iq current_iq, position, speed;
+	_iq current_iq, position, speed, mrev_rollover;
 	ST_Obj *st = (ST_Obj*) stHandle[mtrNum];
-	// TODO do not access it like this...
-	_iq ROmax_mrev = st_obj[mtrNum].vel.conv.cfg.ROMax_mrev;
 
 	// take last current measurement and convert to Ampere
 	current_iq = _IQmpy(gIdq_pu[mtrNum].value[1],
 			_IQ(gUserParams[mtrNum].iqFullScaleCurrent_A));
 
 	// take current position and remove zero position offset
+	mrev_rollover = STPOSCONV_getMRevMaximum_mrev(st->posConvHandle);
+	/*
 	position = STPOSCONV_getPosition_mrev(st->posConvHandle)
 			- gZeroPositionOffset[mtrNum];
 
 	// make sure we stay in the correct range
-	if (position > ROmax_mrev) {
-		position -= 2 * ROmax_mrev;
-	} else if (position < -ROmax_mrev) {
-		position += 2 * ROmax_mrev;
+	if (position > mrev_rollover) {
+		position -= 2 * mrev_rollover;
+	} else if (position < -mrev_rollover) {
+		position += 2 * mrev_rollover;
+	}
+	*/
+	position = STPOSCONV_getPosition_mrev(st->posConvHandle);
+	// Remove offset in a way that preserves the range and does not exceed the
+	// max. value in subterms of the calculations (which would cause integer
+	// overflows and make it explode).
+	if (gZeroPositionOffset[mtrNum] < 0)
+	{
+		_iq off_p_max = gZeroPositionOffset[mtrNum] + mrev_rollover;
+		if (position < off_p_max) {
+			position -= gZeroPositionOffset[mtrNum];
+		} else {
+			position = (position - mrev_rollover) - off_p_max;
+		}
+	}
+	else if (gZeroPositionOffset[mtrNum] > 0)
+	{
+		_iq off_m_max = gZeroPositionOffset[mtrNum] - mrev_rollover;
+		if (position > off_m_max) {
+			position -= gZeroPositionOffset[mtrNum];
+		} else {
+			position = (position + mrev_rollover) - off_m_max;
+		}
 	}
 
 	// take current velocity and convert to krpm
