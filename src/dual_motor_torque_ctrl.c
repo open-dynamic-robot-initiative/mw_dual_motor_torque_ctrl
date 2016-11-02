@@ -83,7 +83,7 @@
 // the globals
 
 //! Used for various debugging stuff.
-//uint32_t gFoobar = 0;
+int32_t gFoobar = 0;
 
 CLARKE_Handle   clarkeHandle_I[2];  //!< the handle for the current Clarke
 									//!< transform
@@ -245,6 +245,9 @@ QepIndexWatchdog_t gQepIndexWatchdog[2] = {
 		{.isInitialized = false, .indexError_counts = 0},
 		{.isInitialized = false, .indexError_counts = 0}};
 
+
+bool gFlag_resetZeroPositionOffset = false;
+_iq gZeroPositionOffset[2] = {0, 0};
 
 
 // **************************************************************************
@@ -557,18 +560,21 @@ void main(void)
 	HAL_disablePwm(halHandleMtr[HAL_MTR1]);
 	HAL_disablePwm(halHandleMtr[HAL_MTR2]);
 
-	{// config GPIO 13 and 22 as output (for LEDs)
+	{
+		// config GPIO 13 and 22 as output (for LEDs)
 		// TODO: Move this to hal_2mtr.c?  Maybe create an own copy of hal.c with all the modifications?
-		HAL_Obj *obj = (HAL_Obj *)halHandle;
-		GPIO_setLow(obj->gpioHandle, GPIO_Number_13);
-		GPIO_setDirection(obj->gpioHandle,
+		GPIO_setLow(hal.gpioHandle, GPIO_Number_13);
+		GPIO_setDirection(hal.gpioHandle,
 				GPIO_Number_13,
 				GPIO_Direction_Output);
 
-		GPIO_setLow(obj->gpioHandle, GPIO_Number_22);
-		GPIO_setDirection(obj->gpioHandle,
+		GPIO_setLow(hal.gpioHandle, GPIO_Number_22);
+		GPIO_setDirection(hal.gpioHandle,
 				GPIO_Number_22,
 				GPIO_Direction_Output);
+
+		// config GPIO 26 as input for gFlag_resetZeroPositionOffset
+		GPIO_setDirection(hal.gpioHandle, GPIO_Number_26, GPIO_Direction_Input);
 	}
 
 	// enable the system by default
@@ -680,8 +686,20 @@ void main(void)
 			maybeSendCanStatusMsg();
 
 
+			// Set the position reset flag via button on a GPIO
+			// Note that the pin is high by default and pulled to low when the button is pressed
+			gFlag_resetZeroPositionOffset = GPIO_read(hal.gpioHandle, GPIO_Number_26) == LOW;
+
+
 			for(mtrNum=HAL_MTR1;mtrNum<=HAL_MTR2;mtrNum++)
 			{
+				// If the flag is set, set current position as zero offset
+				if (gFlag_resetZeroPositionOffset)
+				{
+					ST_Obj *obj = (ST_Obj*) stHandle[mtrNum];
+
+					gZeroPositionOffset[mtrNum] = STPOSCONV_getPosition_mrev(obj->posConvHandle);
+				}
 
 				// If Flag_enableSys is set AND Flag_Run_Identify is set THEN
 				// enable PWMs and set the speed reference
@@ -1528,22 +1546,34 @@ void setCanStatusMsg()
 
 void setCanMotorData(const HAL_MtrSelect_e mtrNum)
 {
-	_iq current_iq = _IQmpy(gIdq_pu[mtrNum].value[1],
+	_iq current_iq, position, speed;
+	ST_Obj *st = (ST_Obj*) stHandle[mtrNum];
+	// TODO do not access it like this...
+	_iq ROmax_mrev = st_obj[mtrNum].vel.conv.cfg.ROMax_mrev;
+
+	// take last current measurement and convert to Ampere
+	current_iq = _IQmpy(gIdq_pu[mtrNum].value[1],
 			_IQ(gUserParams[mtrNum].iqFullScaleCurrent_A));
-	_iq position = st_obj[mtrNum].vel.conv.Pos_mrev;
-	_iq speed = _IQmpy(
-			STPOSCONV_getVelocityFiltered(st_obj[mtrNum].posConvHandle),
+
+	// take current position and remove zero position offset
+	position = STPOSCONV_getPosition_mrev(st->posConvHandle)
+			- gZeroPositionOffset[mtrNum];
+
+	// make sure we stay in the correct range
+	if (position > ROmax_mrev) {
+		position -= 2 * ROmax_mrev;
+	} else if (position < -ROmax_mrev) {
+		position += 2 * ROmax_mrev;
+	}
+
+	// take current velocity and convert to krpm
+	speed = _IQmpy(
+			STPOSCONV_getVelocityFiltered(st->posConvHandle),
 			gSpeed_pu_to_krpm_sf[mtrNum]);
 
-	if (mtrNum == HAL_MTR1)
-	{
-		// send number sequence for debugging
-//		position = seq_counter;
-//		speed = seq_counter++;
+	if (mtrNum == HAL_MTR1) {
 		CAN_setDataMotor1(current_iq, position, speed);
-	}
-	else
-	{
+	} else {
 		CAN_setDataMotor2(current_iq, position, speed);
 	}
 
