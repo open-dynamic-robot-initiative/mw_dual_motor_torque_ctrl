@@ -1534,6 +1534,10 @@ void setCanStatusMsg()
 		status.bit.error_code = CAN_ERROR_OTHER;
 	} else if (gErrors.bit.can_recv_timeout) {
 		status.bit.error_code = CAN_ERROR_CAN_RECV_TIMEOUT;
+	} else if (gErrors.bit.posconv_error) {
+		status.bit.error_code = CAN_ERROR_POSCONV;
+	} else if (gErrors.bit.pos_rollover) {
+		status.bit.error_code = CAN_ERROR_POS_ROLLOVER;
 	} else {
 		status.bit.error_code = CAN_ERROR_NO_ERROR;
 	}
@@ -1728,10 +1732,22 @@ void checkErrors()
 					< gTimer0_stamp - gCanReceiveIqRefTimeout)
 			);
 
-
 	//*** Encoder Error
 	gErrors.bit.qep_error = (checkEncoderError(gQepIndexWatchdog[0])
 			|| checkEncoderError(gQepIndexWatchdog[1]));
+
+	//*** POSCONV error
+	gErrors.bit.posconv_error = (
+			(STPOSCONV_getErrorID(st_obj[HAL_MTR1].posConvHandle) != 0) ||
+			(STPOSCONV_getErrorID(st_obj[HAL_MTR2].posConvHandle) != 0)
+			);
+
+	//*** Position Rollover
+	gErrors.bit.pos_rollover = (
+			(STPOSCONV_getPositionRollOver(st_obj[HAL_MTR1].posConvHandle) != 0) ||
+			(STPOSCONV_getPositionRollOver(st_obj[HAL_MTR2].posConvHandle) != 0)
+			);
+
 
 	// set red LED
 	if (gErrors.all) {
