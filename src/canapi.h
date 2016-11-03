@@ -1,10 +1,12 @@
-/*
- * API for more convenient use of the eCAN module
+/**
+ * \brief API for more convenient use of the eCAN module
  *
  * The goal of this API is to provide a simple, clear interface to control the
  * motors via the eCAN module that wraps all the ugly register stuff. I.e. it
  * should be understandable by everyone, even if they did not read the eCAN
  * documentation.
+ *
+ * \author Felix Widmaier <fwidmaier@tue.mpg.de>
  */
 
 #ifndef SRC_CANAPI_H_

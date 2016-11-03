@@ -74,10 +74,8 @@
 #include "user1.h"
 #include "user2.h"
 
-// SpinTAC
-#include "spintac_velocity_2mtr.h"
-
-#include "canapi.h"
+// local
+#include "spintac_types.h"
 
 // **************************************************************************
 // the defines
@@ -322,12 +320,6 @@ typedef struct _QepIndexWatchdog_t_
 // **************************************************************************
 // the globals
 
-#pragma DATA_SECTION(ECanaRegs,"ECanaRegsFile");
-volatile struct ECAN_REGS ECanaRegs;
-
-#pragma DATA_SECTION(ECanaMboxes,"ECanaMboxesFile");
-volatile struct ECAN_MBOXES ECanaMboxes;
-
 
 // **************************************************************************
 // the function prototypes
@@ -341,30 +333,12 @@ interrupt void motor2_ISR(void);
 interrupt void can1_ISR();
 interrupt void timer0_ISR();
 
-void pidSetup(HAL_MtrSelect_e mtrNum);
-
 void runOffsetsCalculation(HAL_MtrSelect_e mtrNum);
 
 
 //! \brief Updates the global variables
 //! 
-void updateGlobalVariables(EST_Handle handle, const uint_least8_t mtrNum);
-
-
-//! \brief Updates version 1p6 of library
-//!
-void softwareUpdate1p6(EST_Handle handle, USER_Params *pUserParams);
-
-
-//! \brief     Sets up the Clarke transform for current
-//!
-void setupClarke_I(CLARKE_Handle, const uint_least8_t);
-
-
-//! \brief     Sets up the Clarke transform for voltage
-//!
-void setupClarke_V(CLARKE_Handle, const uint_least8_t);
-
+void updateGlobalVariables(const uint_least8_t mtrNum);
 
 CTRL_Handle CTRL_init(void *pMemory, const size_t numBytes);
 
@@ -395,12 +369,6 @@ void setCanMotorData(const HAL_MtrSelect_e mtrNum);
 //! \brief period specified via CAN_STATUSMSG_TRANS_FREQ_Hz.
 void maybeSendCanStatusMsg();
 
-//! \brief Overwrite the stettings for timer0 done in HAL_setParams().
-//! Call this *after* HAL_setParams().
-void overwriteSetupTimer0(HAL_Handle handle, const uint32_t timerFreq_Hz);
-
-//! \brief Set up the interrupts for encoder indices
-void setupQepIndexInterrupt(HAL_Handle halHandle, HAL_Handle_mtr halHandleMtr[2]);
 
 //! \brief ISR triggered by index of QEP1.
 interrupt void qep1IndexISR();
@@ -418,6 +386,7 @@ void checkErrors();
 
 //! \brief Turn LEDs on/off depending on the system state.
 void LED_run(HAL_Handle halHandle);
+
 
 //@} //defgroup
 #endif // end of _MAIN_H_ definition

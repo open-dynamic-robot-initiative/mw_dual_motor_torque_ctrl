@@ -50,41 +50,33 @@
 // system includes
 #include <math.h>
 #include "main_2mtr.h"
+#include "main_helper.h"
 #include "utils.h"
 #include "virtualspring.h"
+#include "canapi.h"
+#include "spintac.h"
 
 #ifdef FLASH
 #pragma CODE_SECTION(motor1_ISR, "ramfuncs");
 #pragma CODE_SECTION(motor2_ISR, "ramfuncs");
 #endif
 
-// Include header files used in the main function
 
 // **************************************************************************
 // the defines
 
-#define LED_BLINK_FREQ_Hz   2
-#define LED_ONBOARD_RED  (GPIO_Number_e)HAL_Gpio_LED2
-#define LED_ONBOARD_BLUE (GPIO_Number_e)HAL_Gpio_LED3
-#define LED_EXTERN_RED GPIO_Number_12
-#define LED_EXTERN_YELLOW GPIO_Number_13
-#define LED_EXTERN_GREEN GPIO_Number_22
-
-#define CAN_TRANSMISSION_TIMER_FREQ_Hz 1000
-#define CAN_STATUSMSG_TRANS_FREQ_Hz 1
-
-#define TIMER0_FREQ_Hz CAN_TRANSMISSION_TIMER_FREQ_Hz
-
-#define QEP_MAX_INDEX_ERROR  (1./360.) * USER_MOTOR_ENCODER_LINES  // 1 degree
-
-#define POTI_RESULT1 ADC_ResultNumber_0
-#define POTI_RESULT2 ADC_ResultNumber_8
 
 // **************************************************************************
 // the globals
 
 //! Used for various debugging stuff.
 int32_t gFoobar = 0;
+
+#pragma DATA_SECTION(ECanaRegs,"ECanaRegsFile");
+volatile struct ECAN_REGS ECanaRegs;
+
+#pragma DATA_SECTION(ECanaMboxes,"ECanaMboxesFile");
+volatile struct ECAN_MBOXES ECanaMboxes;
 
 CLARKE_Handle   clarkeHandle_I[2];  //!< the handle for the current Clarke
 									//!< transform
@@ -342,7 +334,9 @@ void main(void)
 	GPIO_setQualificationPeriod(hal.gpioHandle, GPIO_Number_56, 11); //GPIO56-58
 
 	// Overwrite the settings for timer0 (we want it faster)
-	overwriteSetupTimer0(halHandle, TIMER0_FREQ_Hz);
+	uint32_t timerPeriod_cnts = ((uint32_t)gUserParams[0].systemFreq_MHz * 1e6l)
+			/ TIMER0_FREQ_Hz - 1;
+	overwriteSetupTimer0(halHandle, timerPeriod_cnts);
 
 	// initialize the estimator
 	estHandle[HAL_MTR1] = EST_init((void *)USER_EST_HANDLE_ADDRESS, 0x200);
@@ -453,7 +447,14 @@ void main(void)
 					gUserParams[mtrNum].numVoltageSensors);
 
 			// initialize the PID controllers
-			pidSetup((HAL_MtrSelect_e)mtrNum);
+
+			// There are two PI controllers, one for Iq and one for Id.
+			// This is for the Id current controller
+			pidHandle[mtrNum][1] = PID_init(&pid[mtrNum][1], sizeof(pid[mtrNum][1]));
+			// This is for the Iq current controller
+			pidHandle[mtrNum][2] = PID_init(&pid[mtrNum][2], sizeof(pid[mtrNum][2]));
+			// This sets up both controllers
+			pidSetup(pidHandle[mtrNum], gUserParams[mtrNum]);
 
 			// initialize the inverse Park module
 			iparkHandle[mtrNum] = IPARK_init(&ipark[mtrNum],
@@ -534,7 +535,8 @@ void main(void)
 			8000.0);
 
 	// setup encoder index interrupts
-	setupQepIndexInterrupt(halHandle, halHandleMtr);
+	setupQepIndexInterrupt(halHandle, halHandleMtr, &qep1IndexISR,
+			&qep2IndexISR);
 
 	// setup the SpinTAC Components
 	ST_setupPosConv_mtr1(stHandle[HAL_MTR1]);
@@ -569,34 +571,17 @@ void main(void)
 
 	// enable the Timer 0 interrupts
 	HAL_enableTimer0Int(halHandle);
-	{   // define ISR function
-		// TODO: move this to a function
-		PIE_Obj *pie = (PIE_Obj *)hal.pieHandle;
-		ENABLE_PROTECTED_REGISTER_WRITE_MODE;
-		pie->TINT0 = &timer0_ISR;
-		DISABLE_PROTECTED_REGISTER_WRITE_MODE;
-	}
+	PIE_registerTimer0IntHandler(hal.pieHandle, &timer0_ISR);
 
 	// disable the PWM
 	HAL_disablePwm(halHandleMtr[HAL_MTR1]);
 	HAL_disablePwm(halHandleMtr[HAL_MTR2]);
 
-	{
-		// config GPIO 13 and 22 as output (for LEDs)
-		// TODO: Move this to hal_2mtr.c?  Maybe create an own copy of hal.c with all the modifications?
-		GPIO_setLow(hal.gpioHandle, GPIO_Number_13);
-		GPIO_setDirection(hal.gpioHandle,
-				GPIO_Number_13,
-				GPIO_Direction_Output);
+	// reconfigure GPIO pins for LEDs and button
+	HAL_overwriteSetupGpio(halHandle);
 
-		GPIO_setLow(hal.gpioHandle, GPIO_Number_22);
-		GPIO_setDirection(hal.gpioHandle,
-				GPIO_Number_22,
-				GPIO_Direction_Output);
-
-		// config GPIO 26 as input for gFlag_resetZeroPositionOffset
-		GPIO_setDirection(hal.gpioHandle, GPIO_Number_26, GPIO_Direction_Input);
-	}
+	// Setup everything related to CAN communication
+	setupCan(halHandle, &can1_ISR);
 
 	// enable the system by default
 	gMotorVars[HAL_MTR1].Flag_enableSys = true;
@@ -618,24 +603,6 @@ void main(void)
 	HAL_setupDrvSpi(halHandleMtr[HAL_MTR1], &gDrvSpi8305Vars[HAL_MTR1]);
 	HAL_setupDrvSpi(halHandleMtr[HAL_MTR2], &gDrvSpi8305Vars[HAL_MTR2]);
 #endif
-
-
-	// Setup CAN interface
-	CAN_initECanaGpio(halHandle);
-	CAN_initECana();
-	CAN_setupMboxes();
-
-	{ // Set ISR for CAN interrupt
-		PIE_Obj *pie = hal.pieHandle;
-		ENABLE_PROTECTED_REGISTER_WRITE_MODE;
-		pie->ECAN1INT = &can1_ISR;
-		DISABLE_PROTECTED_REGISTER_WRITE_MODE;
-
-		PIE_enableInt(hal.pieHandle, PIE_GroupNumber_9, PIE_InterruptSource_ECANA1);
-		// enable the cpu interrupt for PIE group 9 interrupts
-		CPU_enableInt(hal.cpuHandle, CPU_IntNumber_9);
-	}
-
 
 	// Begin the background loop
 	for(;;)
@@ -678,7 +645,7 @@ void main(void)
 
 			// Set the position reset flag via button on a GPIO
 			// Note that the pin is high by default and pulled to low when the button is pressed
-			gFlag_resetZeroPositionOffset = GPIO_read(hal.gpioHandle, GPIO_Number_26) == LOW;
+			gFlag_resetZeroPositionOffset = GPIO_read(hal.gpioHandle, BUTTON_RESET_POS_OFFSET) == LOW;
 
 
 			for(mtrNum=HAL_MTR1;mtrNum<=HAL_MTR2;mtrNum++)
@@ -744,7 +711,7 @@ void main(void)
 				}
 
 				// update the global variables
-				updateGlobalVariables(estHandle[mtrNum], mtrNum);
+				updateGlobalVariables(mtrNum);
 
 				// enable/disable the forced angle
 				EST_setFlag_enableForceAngle(estHandle[mtrNum],
@@ -780,15 +747,11 @@ void main(void)
 //! \brief     The main ISR that implements the motor control.
 interrupt void motor1_ISR(void)
 {
-    //HAL_setGpioHigh(halHandle, GPIO_Number_12);
-
 	// acknowledge the ADC interrupt
 	HAL_acqAdcInt(halHandle, ADC_IntNumber_1);
 
 	generic_motor_ISR(HAL_MTR1,
 	        _IQ(USER_MOTOR_RES_EST_CURRENT), _IQ(USER_MAX_VS_MAG_PU));
-
-	//HAL_setGpioLow(halHandle, GPIO_Number_12);
 
 	return;
 } // end of motor1_ISR() function
@@ -796,16 +759,11 @@ interrupt void motor1_ISR(void)
 
 interrupt void motor2_ISR(void)
 {
-	//HAL_setGpioHigh(halHandle, GPIO_Number_13);
-
 	// acknowledge the ADC interrupt
 	HAL_acqAdcInt(halHandle, ADC_IntNumber_2);
 
 	generic_motor_ISR(HAL_MTR2,
 	        _IQ(USER_MOTOR_RES_EST_CURRENT_2), _IQ(USER_MAX_VS_MAG_PU_2));
-
-
-	//HAL_setGpioLow(halHandle, GPIO_Number_13);
 
 	return;
 } // end of motor2_ISR() function
@@ -823,7 +781,6 @@ void generic_motor_ISR(
 	MATH_vec2 Iab_pu;
 	MATH_vec2 Vab_pu;
 	MATH_vec2 phasor;
-
 
 	// convert the ADC data
 	HAL_readAdcDataWithOffsets(
@@ -1185,97 +1142,6 @@ interrupt void timer0_ISR()
 }
 
 
-void pidSetup(HAL_MtrSelect_e mtrNum)
-{
-	// This equation uses the scaled maximum voltage vector, which is
-	// already in per units, hence there is no need to include the #define
-	// for USER_IQ_FULL_SCALE_VOLTAGE_V
-	_iq maxVoltage_pu = _IQ(gUserParams[mtrNum].maxVsMag_pu *
-			gUserParams[mtrNum].voltage_sf);
-
-
-	float_t fullScaleCurrent = gUserParams[mtrNum].iqFullScaleCurrent_A;
-	float_t fullScaleVoltage = gUserParams[mtrNum].iqFullScaleVoltage_V;
-	float_t IsrPeriod_sec = 1.0e-6 * gUserParams[mtrNum].pwmPeriod_usec *
-			gUserParams[mtrNum].numPwmTicksPerIsrTick;
-	float_t Ls_d = gUserParams[mtrNum].motor_Ls_d;
-	float_t Ls_q = gUserParams[mtrNum].motor_Ls_q;
-	float_t Rs = gUserParams[mtrNum].motor_Rs;
-
-	// This lab assumes that motor parameters are known, and it does not
-	// perform motor ID, so the R/L parameters are known and defined in
-	// user.h
-	float_t RoverLs_d = Rs / Ls_d;
-	float_t RoverLs_q = Rs / Ls_q;
-
-	// For the current controller, Kp = Ls*bandwidth(rad/sec)  But in order
-	// to be used, it must be converted to per unit values by multiplying
-	// by fullScaleCurrent and then dividing by fullScaleVoltage.  From the
-	// statement below, we see that the bandwidth in rad/sec is equal to
-	// 0.25/IsrPeriod_sec, which is equal to USER_ISR_FREQ_HZ/4. This means
-	// that by setting Kp as described below, the bandwidth in Hz is
-	// USER_ISR_FREQ_HZ/(8*pi).
-	_iq Kp_Id = _IQ((0.25 * Ls_d * fullScaleCurrent) / (IsrPeriod_sec
-			* fullScaleVoltage));
-
-	// In order to achieve pole/zero cancellation (which reduces the
-	// closed-loop transfer function from a second-order system to a
-	// first-order system), Ki must equal Rs/Ls.  Since the output of the
-	// Ki gain stage is integrated by a DIGITAL integrator, the integrator
-	// input must be scaled by 1/IsrPeriod_sec.  That's just the way
-	// digital integrators work.  But, since IsrPeriod_sec is a constant,
-	// we can save an additional multiplication operation by lumping this
-	// term with the Ki value.
-	_iq Ki_Id = _IQ(RoverLs_d * IsrPeriod_sec);
-
-	// Now do the same thing for Kp for the q-axis current controller.
-	// If the motor is not an IPM motor, Ld and Lq are the same, which
-	// means that Kp_Iq = Kp_Id
-	_iq Kp_Iq = _IQ((0.25 * Ls_q * fullScaleCurrent) / (IsrPeriod_sec
-			* fullScaleVoltage));
-
-	// Do the same thing for Ki for the q-axis current controller.  If the
-	// motor is not an IPM motor, Ld and Lq are the same, which means that
-	// Ki_Iq = Ki_Id.
-	_iq Ki_Iq = _IQ(RoverLs_q * IsrPeriod_sec);
-
-	// There are two PI controllers; two current
-	// controllers.  Each PI controller has two coefficients; Kp and Ki.
-	// So you have a total of four coefficients that must be defined.
-	// This is for the Id current controller
-	pidHandle[mtrNum][1] = PID_init(&pid[mtrNum][1], sizeof(pid[mtrNum][1]));
-	// This is for the Iq current controller
-	pidHandle[mtrNum][2] = PID_init(&pid[mtrNum][2], sizeof(pid[mtrNum][2]));
-
-	// The following instructions load the parameters for the d-axis
-	// current controller.
-	// P term = Kp_Id, I term = Ki_Id, D term = 0
-	PID_setGains(pidHandle[mtrNum][1], Kp_Id, Ki_Id, _IQ(0.0));
-
-	// Largest negative voltage = -maxVoltage_pu, largest positive
-	// voltage = maxVoltage_pu
-	PID_setMinMax(pidHandle[mtrNum][1], -maxVoltage_pu, maxVoltage_pu);
-
-	// Set the initial condition value for the integrator output to 0
-	PID_setUi(pidHandle[mtrNum][1], _IQ(0.0));
-
-	// The following instructions load the parameters for the q-axis
-	// current controller.
-	// P term = Kp_Iq, I term = Ki_Iq, D term = 0
-	PID_setGains(pidHandle[mtrNum][2], Kp_Iq, Ki_Iq, _IQ(0.0));
-
-	// The largest negative voltage = 0 and the largest positive
-	// voltage = 0.  But these limits are updated every single ISR before
-	// actually executing the Iq controller. The limits depend on how much
-	// voltage is left over after the Id controller executes. So having an
-	// initial value of 0 does not affect Iq current controller execution.
-	PID_setMinMax(pidHandle[mtrNum][2], _IQ(0.0), _IQ(0.0));
-
-	// Set the initial condition value for the integrator output to 0
-	PID_setUi(pidHandle[mtrNum][2], _IQ(0.0));
-}
-
-
 void runOffsetsCalculation(HAL_MtrSelect_e mtrNum)
 {
 	uint16_t cnt;
@@ -1325,101 +1191,9 @@ void runOffsetsCalculation(HAL_MtrSelect_e mtrNum)
 } // end of runOffsetsCalculation() function
 
 
-//! \brief  Call this function to fix 1p6. This is only used for F2806xF/M
-//! \brief  implementation of InstaSPIN (version 1.6 of ROM) since the
-//! \brief  inductance calculation is not done correctly in ROM, so this
-//! \brief  function fixes that ROM bug.
-void softwareUpdate1p6(EST_Handle handle, USER_Params *pUserParams)
-{
-	float_t iqFullScaleVoltage_V = pUserParams->iqFullScaleVoltage_V;
-	float_t iqFullScaleCurrent_A = pUserParams->iqFullScaleCurrent_A;
-	float_t voltageFilterPole_rps = pUserParams->voltageFilterPole_rps;
-	float_t motorLs_d = pUserParams->motor_Ls_d;
-	float_t motorLs_q = pUserParams->motor_Ls_q;
-
-	float_t fullScaleInductance = iqFullScaleVoltage_V
-			/ (iqFullScaleCurrent_A
-					* voltageFilterPole_rps);
-	float_t Ls_coarse_max = _IQ30toF(EST_getLs_coarse_max_pu(handle));
-	int_least8_t lShift = ceil(log(motorLs_d / (Ls_coarse_max
-			* fullScaleInductance)) / log(2.0));
-	uint_least8_t Ls_qFmt = 30 - lShift;
-	float_t L_max = fullScaleInductance * pow(2.0, lShift);
-	_iq Ls_d_pu = _IQ30(motorLs_d / L_max);
-	_iq Ls_q_pu = _IQ30(motorLs_q / L_max);
-
-	// store the results
-	EST_setLs_d_pu(handle, Ls_d_pu);
-	EST_setLs_q_pu(handle, Ls_q_pu);
-	EST_setLs_qFmt(handle, Ls_qFmt);
-
-	return;
-} // end of softwareUpdate1p6() function
-
-
-//! \brief     Setup the Clarke transform for either 2 or 3 sensors.
-//! \param[in] handle             The clarke (CLARKE) handle
-//! \param[in] numCurrentSensors  The number of current sensors
-void setupClarke_I(CLARKE_Handle handle, const uint_least8_t numCurrentSensors)
-{
-	_iq alpha_sf, beta_sf;
-
-	// initialize the Clarke transform module for current
-	if(numCurrentSensors == 3)
-	{
-		alpha_sf = _IQ(MATH_ONE_OVER_THREE);
-		beta_sf = _IQ(MATH_ONE_OVER_SQRT_THREE);
-	}
-	else if(numCurrentSensors == 2)
-	{
-		alpha_sf = _IQ(1.0);
-		beta_sf = _IQ(MATH_ONE_OVER_SQRT_THREE);
-	}
-	else
-	{
-		alpha_sf = _IQ(0.0);
-		beta_sf = _IQ(0.0);
-	}
-
-	// set the parameters
-	CLARKE_setScaleFactors(handle, alpha_sf, beta_sf);
-	CLARKE_setNumSensors(handle, numCurrentSensors);
-
-	return;
-} // end of setupClarke_I() function
-
-
-//! \brief     Setup the Clarke transform for either 2 or 3 sensors.
-//! \param[in] handle             The clarke (CLARKE) handle
-//! \param[in] numVoltageSensors  The number of voltage sensors
-void setupClarke_V(CLARKE_Handle handle, const uint_least8_t numVoltageSensors)
-{
-	_iq alpha_sf, beta_sf;
-
-	// initialize the Clarke transform module for voltage
-	if(numVoltageSensors == 3)
-	{
-		alpha_sf = _IQ(MATH_ONE_OVER_THREE);
-		beta_sf = _IQ(MATH_ONE_OVER_SQRT_THREE);
-	}
-	else
-	{
-		alpha_sf = _IQ(0.0);
-		beta_sf = _IQ(0.0);
-	}
-
-	// In other words, the only acceptable number of voltage sensors is three.
-	// set the parameters
-	CLARKE_setScaleFactors(handle, alpha_sf, beta_sf);
-	CLARKE_setNumSensors(handle, numVoltageSensors);
-
-	return;
-} // end of setupClarke_V() function
-
-
 //! \brief     Update the global variables (gMotorVars).
 //! \param[in] handle  The estimator (EST) handle
-void updateGlobalVariables(EST_Handle handle, const uint_least8_t mtrNum)
+void updateGlobalVariables(const uint_least8_t mtrNum)
 {
 	// get the speed estimate
 	gMotorVars[mtrNum].Speed_krpm = _IQmpy(
@@ -1456,37 +1230,6 @@ void updateGlobalVariables(EST_Handle handle, const uint_least8_t mtrNum)
 
 	return;
 } // end of updateGlobalVariables() function
-
-void ST_runPosConv(
-		ST_Handle handle,
-		ENC_Handle encHandle,
-		SLIP_Handle slipHandle,
-		MATH_vec2 *Idq_pu,
-		MOTOR_Type_e motorType)
-{
-	ST_Obj *stObj = (ST_Obj *)handle;
-
-	// get the electrical angle from the ENC module
-	STPOSCONV_setElecAngle_erev(
-	        stObj->posConvHandle, ENC_getElecAngle(encHandle));
-
-	if(motorType ==  MOTOR_Type_Induction) {
-		// The CurrentVector feedback is only needed for ACIM
-		// get the vector of the direct/quadrature current input vector values
-		// from CTRL
-		STPOSCONV_setCurrentVector(stObj->posConvHandle, Idq_pu);
-	}
-
-	// run the SpinTAC Position Converter
-	STPOSCONV_run(stObj->posConvHandle);
-
-	if(motorType ==  MOTOR_Type_Induction) {
-		// The Slip Velocity is only needed for ACIM
-		// update the slip velocity in electrical angle per second, Q24
-		SLIP_setSlipVelocity(
-		        slipHandle, STPOSCONV_getSlipVelocity(stObj->posConvHandle));
-	}
-}
 
 
 void setCanStatusMsg()
@@ -1569,53 +1312,6 @@ void maybeSendCanStatusMsg()
 
 		gCanLastStatusMsgTime = gTimer0_stamp;
 	}
-}
-
-
-void overwriteSetupTimer0(HAL_Handle handle, const uint32_t timerFreq_Hz)
-{
-  HAL_Obj  *obj = (HAL_Obj *)handle;
-  uint32_t  timerPeriod_cnts = ((uint32_t)gUserParams[0].systemFreq_MHz * 1e6l) / timerFreq_Hz - 1;
-
-  // use timer 0 for CAN transmissions
-  TIMER_setDecimationFactor(obj->timerHandle[0], 0);
-  TIMER_setEmulationMode(obj->timerHandle[0], TIMER_EmulationMode_RunFree);
-  TIMER_setPeriod(obj->timerHandle[0], timerPeriod_cnts);
-  TIMER_setPreScaler(obj->timerHandle[0], 0);
-
-  return;
-}  // end of HAL_setupTimers() function
-
-
-void setupQepIndexInterrupt(HAL_Handle halHandle, HAL_Handle_mtr halHandleMtr[2])
-{
-	uint_least8_t mtrNum;
-	HAL_Obj *halObj = (HAL_Obj *)halHandle;
-	HAL_Obj_mtr *halMtrObj;
-	PIE_Obj *pie = (PIE_Obj *)halObj->pieHandle;
-
-	// specify ISRs
-	ENABLE_PROTECTED_REGISTER_WRITE_MODE;
-	pie->EQEP1_INT = &qep1IndexISR;
-	pie->EQEP2_INT = &qep2IndexISR;
-	//PIE_registerPieIntHandler(obj->pieHandle, PIE_GroupNumber_5, PIE_InterruptSource_EQEP1, &qepIndexISR);
-	DISABLE_PROTECTED_REGISTER_WRITE_MODE;
-
-	for(mtrNum=HAL_MTR1; mtrNum <= HAL_MTR2; mtrNum++)
-	{
-		halMtrObj = (HAL_Obj_mtr *)halHandleMtr[mtrNum];
-
-		// enable QEP interrupt for index
-		QEP_clear_all_interrupt_flags(halMtrObj->qepHandle);
-		QEP_enable_interrupt(halMtrObj->qepHandle, QEINT_Iel);
-	}
-
-	// enable the corresponding interrupts in PIE (group 5)
-	PIE_enableInt(halObj->pieHandle, PIE_GroupNumber_5, PIE_InterruptSource_EQEP1);
-	PIE_enableInt(halObj->pieHandle, PIE_GroupNumber_5, PIE_InterruptSource_EQEP2);
-
-	// finally enable the CPU interrupt for PIE group 5 interrupts
-	CPU_enableInt(halObj->cpuHandle, CPU_IntNumber_5);
 }
 
 
@@ -1755,6 +1451,7 @@ void LED_run(HAL_Handle halHandle)
 		HAL_turnLedOff(halHandle, LED_EXTERN_RED);
 	}
 }
+
 
 //@} //defgroup
 // end of file
