@@ -7,6 +7,7 @@
 // **************************************************************************
 // the includes
 #include "virtualspring.h"
+#include "utils.h"
 
 
 // **************************************************************************
@@ -70,14 +71,16 @@ void VIRTUALSPRING_run(VIRTUALSPRING_Handle vsHandle, _iq motorPosition_mrev)
 
     // Subtract offset from position to get deflection. Handle overflow of
     // Pos_mrev.
-    spring->deflection = motorPosition_mrev
-            - spring->encoderOffset
-            + spring->equilibriumPosition;
-    if (spring->deflection < -spring->maxPosition_mrev) {
-        spring->deflection += 2 * spring->maxPosition_mrev;
-    } else if(spring->deflection > spring->maxPosition_mrev) {
-        spring->deflection -= 2 * spring->maxPosition_mrev;
-    }
+    //spring->deflection = motorPosition_mrev
+    //        - spring->encoderOffset
+    //        + spring->equilibriumPosition;
+    spring->deflection = removePositionOffset(motorPosition_mrev,
+    		spring->encoderOffset,
+			spring->maxPosition_mrev);
+    // this offset has to be added, so remove negative
+    spring->deflection = removePositionOffset(spring->deflection,
+    		-spring->equilibriumPosition,
+			spring->maxPosition_mrev);
 
     return;
 }

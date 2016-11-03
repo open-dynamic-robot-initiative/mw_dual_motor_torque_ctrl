@@ -50,6 +50,7 @@
 // system includes
 #include <math.h>
 #include "main_2mtr.h"
+#include "utils.h"
 #include "virtualspring.h"
 
 #ifdef FLASH
@@ -1557,39 +1558,9 @@ void setCanMotorData(const HAL_MtrSelect_e mtrNum)
 
 	// take current position and remove zero position offset
 	mrev_rollover = STPOSCONV_getMRevMaximum_mrev(st->posConvHandle);
-	/*
-	position = STPOSCONV_getPosition_mrev(st->posConvHandle)
-			- gZeroPositionOffset[mtrNum];
-
-	// make sure we stay in the correct range
-	if (position > mrev_rollover) {
-		position -= 2 * mrev_rollover;
-	} else if (position < -mrev_rollover) {
-		position += 2 * mrev_rollover;
-	}
-	*/
 	position = STPOSCONV_getPosition_mrev(st->posConvHandle);
-	// Remove offset in a way that preserves the range and does not exceed the
-	// max. value in subterms of the calculations (which would cause integer
-	// overflows and make it explode).
-	if (gZeroPositionOffset[mtrNum] < 0)
-	{
-		_iq off_p_max = gZeroPositionOffset[mtrNum] + mrev_rollover;
-		if (position < off_p_max) {
-			position -= gZeroPositionOffset[mtrNum];
-		} else {
-			position = (position - mrev_rollover) - off_p_max;
-		}
-	}
-	else if (gZeroPositionOffset[mtrNum] > 0)
-	{
-		_iq off_m_max = gZeroPositionOffset[mtrNum] - mrev_rollover;
-		if (position > off_m_max) {
-			position -= gZeroPositionOffset[mtrNum];
-		} else {
-			position = (position + mrev_rollover) - off_m_max;
-		}
-	}
+	position = removePositionOffset(position, gZeroPositionOffset[mtrNum],
+			mrev_rollover);
 
 	// take current velocity and convert to krpm
 	speed = _IQmpy(
