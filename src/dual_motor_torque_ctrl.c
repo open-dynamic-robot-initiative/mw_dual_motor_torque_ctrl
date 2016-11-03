@@ -254,6 +254,17 @@ bool gFlag_resetZeroPositionOffset = false;
 //! Offset that is removed from the position before sending it via CAN.
 _iq gZeroPositionOffset[2] = {0, 0};
 
+//! \brief If true, a rollover of the PosConv module will trigger an error.
+//!
+//! This is nice for position control applications where the motor is not
+//! expected to move far enough to ever observe an rollover.  By throwing an
+//! error in the case it happens nonetheless, it is ensured that the system will
+//! not explode.
+//!
+//! \note For applications where rollovers are expected (i.e. motor spinning
+//! freely), this should be disabled!
+bool gFlag_enablePosRolloverError = true;
+
 
 // **************************************************************************
 // the functions
@@ -1168,6 +1179,8 @@ interrupt void can1_ISR()
 		case CAN_CMD_SET_CAN_RECV_TIMEOUT:
 			gCanReceiveIqRefTimeout = cmd_val;
 			break;
+		case CAN_CMD_ENABLE_POS_ROLLOVER_ERROR:
+			gFlag_enablePosRolloverError = cmd_val;
 		}
 
 		// Acknowledge interrupt
@@ -1717,8 +1730,8 @@ void checkErrors()
 			(STPOSCONV_getErrorID(st_obj[HAL_MTR2].posConvHandle) != 0)
 			);
 
-	//*** Position Rollover
-	gErrors.bit.pos_rollover = (
+	//*** Position Rollover (only check if enabled)
+	gErrors.bit.pos_rollover = gFlag_enablePosRolloverError && (
 			(STPOSCONV_getPositionRollOver(st_obj[HAL_MTR1].posConvHandle) != 0) ||
 			(STPOSCONV_getPositionRollOver(st_obj[HAL_MTR2].posConvHandle) != 0)
 			);

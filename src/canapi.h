@@ -83,6 +83,7 @@ extern "C" {
 #define CAN_CMD_SEND_ADC6 15
 #define CAN_CMD_SEND_ALL 20
 #define CAN_CMD_SET_CAN_RECV_TIMEOUT 30
+#define CAN_CMD_ENABLE_POS_ROLLOVER_ERROR 31
 //! \}
 
 
