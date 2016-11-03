@@ -246,8 +246,12 @@ QepIndexWatchdog_t gQepIndexWatchdog[2] = {
 		{.isInitialized = false, .indexError_counts = 0},
 		{.isInitialized = false, .indexError_counts = 0}};
 
-
+//! While set, the current position is stored as offset which is removed from
+//! the position before sending it via CAN (i.e. the current position becomes
+//! zero).
 bool gFlag_resetZeroPositionOffset = false;
+
+//! Offset that is removed from the position before sending it via CAN.
 _iq gZeroPositionOffset[2] = {0, 0};
 
 
