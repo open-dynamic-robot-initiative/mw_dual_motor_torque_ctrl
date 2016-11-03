@@ -238,6 +238,10 @@ uint32_t gCanReceiveIqRefTimeout = 0;
 //! allowed to send.
 uint32_t gEnabledCanMessages = 0;
 
+//! Set to true when the CAN module is currently aborting a message that was not
+//! acknowledged in time.
+bool gCanAbortingMessages = false;
+
 //! Errors that occured in the system.  gErrors.all == 0 if no errors occured.
 Error_t gErrors;
 
@@ -633,10 +637,6 @@ void main(void)
 	}
 
 
-	// turn red led off (no errors so far)
-	HAL_turnLedOff(halHandle, LED_ONBOARD_RED);
-	HAL_turnLedOff(halHandle, LED_EXTERN_RED);
-
 	// Begin the background loop
 	for(;;)
 	{
@@ -644,13 +644,12 @@ void main(void)
 		// Motor 1 Flag_enableSys is the master control.
 		while(!(gMotorVars[HAL_MTR1].Flag_enableSys))
 		{
-			HAL_turnLedOff(halHandle, LED_ONBOARD_BLUE);
-			HAL_turnLedOff(halHandle, LED_EXTERN_GREEN);
-
 			// Don't allow motors to be enabled while system is disabled
 			//FIXME maybe problem if enable sys and enable motor messages are sent directly in row?
 			gMotorVars[HAL_MTR1].Flag_Run_Identify = false;
 			gMotorVars[HAL_MTR2].Flag_Run_Identify = false;
+
+			LED_run(halHandle);
 
 			//checkErrors();
 			maybeSendCanStatusMsg();
@@ -662,36 +661,10 @@ void main(void)
 		{
 			uint_least8_t mtrNum = HAL_MTR1;
 
-			// Show system and motor status using the blue LED
-			if (gMotorVars[0].Flag_Run_Identify || gMotorVars[1].Flag_Run_Identify)
-			{
-				uint32_t blink_duration = TIMER0_FREQ_Hz / LED_BLINK_FREQ_Hz;
-
-				// blink faster while motors are aligned
-				if ((gMotorVars[0].Flag_Run_Identify
-						&& gMotorVars[0].Flag_enableAlignment)
-						|| (gMotorVars[1].Flag_Run_Identify
-								&& gMotorVars[1].Flag_enableAlignment)) {
-					blink_duration /= 4;
-				}
-
-				// toggle status LED
-				if(gStatusLedBlinkLastToggleTime
-						< (gTimer0_stamp - blink_duration))
-				{
-					HAL_toggleLed(halHandle, LED_ONBOARD_BLUE);
-					HAL_toggleLed(halHandle, LED_EXTERN_GREEN);
-					gStatusLedBlinkLastToggleTime = gTimer0_stamp;
-				}
-			}
-			else
-			{
-				HAL_turnLedOn(halHandle, LED_ONBOARD_BLUE);
-				HAL_turnLedOn(halHandle, LED_EXTERN_GREEN);
-			}
-
 			/*** Error Checks ***/
 			checkErrors();
+
+			LED_run(halHandle);
 
 			// When there is an error, shut down the system to be safe
 			if (gErrors.all) {
@@ -809,14 +782,6 @@ interrupt void motor1_ISR(void)
 {
     //HAL_setGpioHigh(halHandle, GPIO_Number_12);
 
-//	// toggle status LED
-//	if(gLEDcnt[HAL_MTR1]++
-//	        > (uint_least32_t)(USER_ISR_FREQ_Hz / LED_BLINK_FREQ_Hz))
-//	{
-//	    HAL_toggleLed(halHandle, (GPIO_Number_e)HAL_Gpio_LED2);
-//	    gLEDcnt[HAL_MTR1] = 0;
-//	}
-
 	// acknowledge the ADC interrupt
 	HAL_acqAdcInt(halHandle, ADC_IntNumber_1);
 
@@ -832,14 +797,6 @@ interrupt void motor1_ISR(void)
 interrupt void motor2_ISR(void)
 {
 	//HAL_setGpioHigh(halHandle, GPIO_Number_13);
-
-//	// toggle status LED
-//	if(gLEDcnt[HAL_MTR2]++
-//	        > (uint_least32_t)(USER_ISR_FREQ_Hz_2 / LED_BLINK_FREQ_Hz))
-//	{
-//	    HAL_toggleLed(halHandle, (GPIO_Number_e)HAL_Gpio_LED3);
-//	    gLEDcnt[HAL_MTR2] = 0;
-//	}
 
 	// acknowledge the ADC interrupt
 	HAL_acqAdcInt(halHandle, ADC_IntNumber_2);
@@ -1203,14 +1160,14 @@ interrupt void timer0_ISR()
 	// If there is still an old message waiting for transmission, abort it
 	if (ECanaRegs.CANTRS.all & mbox_mask)
 	{
-		HAL_turnLedOn(halHandle, LED_EXTERN_YELLOW);
+		gCanAbortingMessages = true;
 		// TODO: notify about the issue
 		CAN_abort(mbox_mask);
 		// is it okay to block here (or at least wait for a while)?
 	}
 	else
 	{
-		HAL_turnLedOff(halHandle, LED_EXTERN_YELLOW);
+		gCanAbortingMessages = false;
 	}
 
 	setCanMotorData(HAL_MTR1);
@@ -1735,9 +1692,61 @@ void checkErrors()
 			(STPOSCONV_getPositionRollOver(st_obj[HAL_MTR1].posConvHandle) != 0) ||
 			(STPOSCONV_getPositionRollOver(st_obj[HAL_MTR2].posConvHandle) != 0)
 			);
+}
 
 
-	// set red LED
+void LED_run(HAL_Handle halHandle)
+{
+	//*** GREEN/BLUE LED
+	// Off = system disabled
+	// On = system enabled
+	// Slow Blinking = motor enabled
+	// Fast Blinking = aligning motor
+	if (gMotorVars[0].Flag_enableSys) {
+		// Show system and motor status using the blue LED
+		if (gMotorVars[0].Flag_Run_Identify || gMotorVars[1].Flag_Run_Identify)
+		{
+			uint32_t blink_duration = TIMER0_FREQ_Hz / LED_BLINK_FREQ_Hz;
+
+			// blink faster while motors are aligned
+			if ((gMotorVars[0].Flag_Run_Identify
+					&& gMotorVars[0].Flag_enableAlignment)
+					|| (gMotorVars[1].Flag_Run_Identify
+							&& gMotorVars[1].Flag_enableAlignment)) {
+				blink_duration /= 4;
+			}
+
+			// toggle status LED
+			if(gStatusLedBlinkLastToggleTime
+					< (gTimer0_stamp - blink_duration))
+			{
+				HAL_toggleLed(halHandle, LED_ONBOARD_BLUE);
+				HAL_toggleLed(halHandle, LED_EXTERN_GREEN);
+				gStatusLedBlinkLastToggleTime = gTimer0_stamp;
+			}
+		}
+		else
+		{
+			HAL_turnLedOn(halHandle, LED_ONBOARD_BLUE);
+			HAL_turnLedOn(halHandle, LED_EXTERN_GREEN);
+		}
+	}
+	else // system disabled
+	{
+		HAL_turnLedOff(halHandle, LED_ONBOARD_BLUE);
+		HAL_turnLedOff(halHandle, LED_EXTERN_GREEN);
+	}
+
+	//*** YELLOW LED
+	// Turn on if CAN messages are aborted
+	if (gCanAbortingMessages) {
+		HAL_turnLedOn(halHandle, LED_EXTERN_YELLOW);
+	} else {
+		HAL_turnLedOff(halHandle, LED_EXTERN_YELLOW);
+	}
+
+	//*** RED LED
+	// Turn on if there is an error
 	if (gErrors.all) {
 		HAL_turnLedOn(halHandle, LED_ONBOARD_RED);
 		HAL_turnLedOn(halHandle, LED_EXTERN_RED);
@@ -1745,7 +1754,6 @@ void checkErrors()
 		HAL_turnLedOff(halHandle, LED_ONBOARD_RED);
 		HAL_turnLedOff(halHandle, LED_EXTERN_RED);
 	}
-
 }
 
 //@} //defgroup

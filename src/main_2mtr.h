@@ -416,6 +416,8 @@ inline bool checkEncoderError(const QepIndexWatchdog_t);
 //! Also turns the red LED on if there is an error.
 void checkErrors();
 
+//! \brief Turn LEDs on/off depending on the system state.
+void LED_run(HAL_Handle halHandle);
 
 //@} //defgroup
 #endif // end of _MAIN_H_ definition
