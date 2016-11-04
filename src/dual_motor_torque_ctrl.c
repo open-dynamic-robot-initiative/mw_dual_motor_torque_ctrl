@@ -1089,12 +1089,16 @@ interrupt void can1_ISR()
 		case CAN_CMD_SEND_ADC6:
 			setCanMboxStatus(CAN_MBOX_OUT_ADC6, cmd_val);
 			break;
+		case CAN_CMD_SEND_ENC_INDEX:
+			setCanMboxStatus(CAN_MBOX_OUT_ENC_INDEX, cmd_val);
+			break;
 		case CAN_CMD_SEND_ALL:
 			if (cmd_val) {
 				gEnabledCanMessages = (CAN_MBOX_OUT_Iq
 						| CAN_MBOX_OUT_ENC_POS
 						| CAN_MBOX_OUT_SPEED
-						| CAN_MBOX_OUT_ADC6);
+						| CAN_MBOX_OUT_ADC6
+						| CAN_MBOX_OUT_ENC_INDEX);
 			} else {
 				gEnabledCanMessages = 0;
 			}
@@ -1121,6 +1125,10 @@ interrupt void timer0_ISR()
 	++gTimer0_stamp;
 
 	uint32_t mbox_mask = gEnabledCanMessages;
+
+	// Encoder Index messages are not sent here but in the index ISR. Exclude it
+	// from the mask.
+	mbox_mask &= ~CAN_MBOX_OUT_ENC_INDEX;
 
 	// TODO: better abortion handling
 	// If there is still an old message waiting for transmission, abort it
@@ -1343,15 +1351,28 @@ inline void genericQepIndexISR(const HAL_MtrSelect_e mtrNum)
 	HAL_Obj_mtr *halMtrObj = (HAL_Obj_mtr *)halHandleMtr[mtrNum];
 
 	uint32_t index_posn = QEP_read_posn_index_latch(halMtrObj->qepHandle);
+
+	if (gEnabledCanMessages & CAN_MBOX_OUT_ENC_INDEX) {
+		QEP_Obj *qep = (QEP_Obj *)halMtrObj->qepHandle;
+		// Convert index position from counts to mrev by dividing by the max.
+		// number of counts.
+		_iq index_pos_mrev = _IQ((float_t) index_posn / qep->QPOSMAX);
+		CAN_setEncoderIndex(mtrNum, index_pos_mrev);
+		CAN_send(CAN_MBOX_OUT_ENC_INDEX);
+	}
+
+	// Compute position error compared to first index
 	if (gQepIndexWatchdog[mtrNum].isInitialized) {
-		gQepIndexWatchdog[mtrNum].indexError_counts = index_posn - gQepIndexWatchdog[mtrNum].indexPosition_counts;
+		gQepIndexWatchdog[mtrNum].indexError_counts = index_posn
+				- gQepIndexWatchdog[mtrNum].indexPosition_counts;
 	} else {
 		gQepIndexWatchdog[mtrNum].isInitialized = true;
 		gQepIndexWatchdog[mtrNum].indexPosition_counts = index_posn;
 	}
 
 	// acknowledge QEP interrupt
-	QEP_clear_all_interrupt_flags(halMtrObj->qepHandle);  // for some reason I have to clear *all* flags, not only Iel
+	// for some reason I have to clear *all* flags, not only Iel
+	QEP_clear_all_interrupt_flags(halMtrObj->qepHandle);
 	// acknowledge interrupt from PIE group 5
 	PIE_clearInt(obj->pieHandle, PIE_GroupNumber_5);
 }

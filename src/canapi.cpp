@@ -178,6 +178,7 @@ void CAN_setupMboxes()
     ECanaMboxes.MBOX13.MSGID.all = (uint32_t)CAN_ID_POS << 18;
     ECanaMboxes.MBOX12.MSGID.all = (uint32_t)CAN_ID_SPEED << 18;
     ECanaMboxes.MBOX11.MSGID.all = (uint32_t)CAN_ID_ADC6 << 18;
+    ECanaMboxes.MBOX10.MSGID.all = (uint32_t)CAN_ID_ENC_INDEX << 18;
     ECanaMboxes.MBOX0.MSGID.all = (uint32_t)CAN_ID_COMMANDS << 18;
     ECanaMboxes.MBOX1.MSGID.all = (uint32_t)CAN_ID_IqRef << 18;
 
@@ -204,6 +205,7 @@ void CAN_setupMboxes()
     // Specify the number of bytes that will be sent/received by each mailbox
     ECanaMboxes.MBOX0.MSGCTRL.bit.DLC = 8;
     ECanaMboxes.MBOX1.MSGCTRL.bit.DLC = 8;
+    ECanaMboxes.MBOX10.MSGCTRL.bit.DLC = 5;
     ECanaMboxes.MBOX11.MSGCTRL.bit.DLC = 8;
     ECanaMboxes.MBOX12.MSGCTRL.bit.DLC = 8;
     ECanaMboxes.MBOX13.MSGCTRL.bit.DLC = 8;

@@ -43,6 +43,7 @@ extern "C" {
 #define CAN_MBOX_OUT_ENC_POS    (uint32_t) 1 << 13
 #define CAN_MBOX_OUT_SPEED      (uint32_t) 1 << 12
 #define CAN_MBOX_OUT_ADC6       (uint32_t) 1 << 11
+#define CAN_MBOX_OUT_ENC_INDEX  (uint32_t) 1 << 10
 #define CAN_MBOX_IN_COMMANDS    (uint32_t) 1 << 0
 #define CAN_MBOX_IN_IqRef       (uint32_t) 1 << 1
 
@@ -51,6 +52,7 @@ extern "C" {
 	| CAN_MBOX_OUT_ENC_POS \
 	| CAN_MBOX_OUT_SPEED \
 	| CAN_MBOX_OUT_ADC6 \
+	| CAN_MBOX_OUT_ENC_INDEX \
 	| CAN_MBOX_IN_COMMANDS \
 	| CAN_MBOX_IN_IqRef
 //! \}
@@ -66,6 +68,7 @@ extern "C" {
 #define CAN_ID_POS        0x30
 #define CAN_ID_SPEED      0x40
 #define CAN_ID_ADC6       0x50
+#define CAN_ID_ENC_INDEX  0x60
 //! \}
 
 
@@ -83,6 +86,7 @@ extern "C" {
 #define CAN_CMD_SEND_POSITION 13
 #define CAN_CMD_SEND_VELOCITY 14
 #define CAN_CMD_SEND_ADC6 15
+#define CAN_CMD_SEND_ENC_INDEX 16
 #define CAN_CMD_SEND_ALL 20
 #define CAN_CMD_SET_CAN_RECV_TIMEOUT 30
 #define CAN_CMD_ENABLE_POS_ROLLOVER_ERROR 31
@@ -193,6 +197,12 @@ inline void CAN_setAdcIn6Values(_iq adcin_a6, _iq adcin_b6)
 {
 	ECanaMboxes.MBOX11.MDL.all = adcin_a6;
 	ECanaMboxes.MBOX11.MDH.all = adcin_b6;
+}
+
+inline void CAN_setEncoderIndex(uint16_t mtrNum, _iq index_position)
+{
+	ECanaMboxes.MBOX10.MDH.byte.BYTE4 = mtrNum & 0xFF;
+	ECanaMboxes.MBOX10.MDL.all = index_position;
 }
 
 //! \brief Send data of the specified mailboxes
