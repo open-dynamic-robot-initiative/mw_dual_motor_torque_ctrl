@@ -245,6 +245,7 @@ QepIndexWatchdog_t gQepIndexWatchdog[2] = {
 //! While set, the current position is stored as offset which is removed from
 //! the position before sending it via CAN (i.e. the current position becomes
 //! zero).
+//! \note This feature is currently disabled!
 bool gFlag_resetZeroPositionOffset = false;
 
 //! Offset that is removed from the position before sending it via CAN.
@@ -644,16 +645,24 @@ void main(void)
 
 
 			// Set the position reset flag via button on a GPIO
-			// Note that the pin is high by default and pulled to low when the button is pressed
-			gFlag_resetZeroPositionOffset = GPIO_read(hal.gpioHandle, BUTTON_RESET_POS_OFFSET) == LOW;
+			// Note that the pin is high by default and pulled to low when the
+			// button is pressed
+			//gFlag_resetZeroPositionOffset = GPIO_read(hal.gpioHandle,
+			//		BUTTON_RESET_POS_OFFSET) == LOW;
+			// We don't really need the position offset. Rather use the button
+			// as a soft emergency stop (i.e. disable system)
+			if (GPIO_read(hal.gpioHandle, GPIO_BUTTON) == LOW) {
+				gMotorVars[HAL_MTR1].Flag_enableSys = false;
+			}
 
 
 			for(mtrNum=HAL_MTR1;mtrNum<=HAL_MTR2;mtrNum++)
 			{
 				// If the flag is set, set current position as zero offset
-				if (gFlag_resetZeroPositionOffset) {
-					gZeroPositionOffset[mtrNum] = STPOSCONV_getPosition_mrev(st_obj[mtrNum].posConvHandle);
-				}
+				//if (gFlag_resetZeroPositionOffset) {
+				//	gZeroPositionOffset[mtrNum] = STPOSCONV_getPosition_mrev(
+				//			st_obj[mtrNum].posConvHandle);
+				//}
 
 				// If Flag_enableSys is set AND Flag_Run_Identify is set THEN
 				// enable PWMs and set the speed reference
@@ -1266,18 +1275,19 @@ void setCanStatusMsg()
 
 void setCanMotorData(const HAL_MtrSelect_e mtrNum)
 {
-	_iq current_iq, position, speed, mrev_rollover;
+	_iq current_iq, position, speed;
 	ST_Obj *st = (ST_Obj*) stHandle[mtrNum];
 
 	// take last current measurement and convert to Ampere
 	current_iq = _IQmpy(gIdq_pu[mtrNum].value[1],
 			_IQ(gUserParams[mtrNum].iqFullScaleCurrent_A));
 
-	// take current position and remove zero position offset
-	mrev_rollover = STPOSCONV_getMRevMaximum_mrev(st->posConvHandle);
+	// take the current position
 	position = STPOSCONV_getPosition_mrev(st->posConvHandle);
-	position = removePositionOffset(position, gZeroPositionOffset[mtrNum],
-			mrev_rollover);
+	// remove zero position offset (feature disabled)
+	//_iq mrev_rollover = STPOSCONV_getMRevMaximum_mrev(st->posConvHandle);
+	//position = removePositionOffset(position, gZeroPositionOffset[mtrNum],
+	//		mrev_rollover);
 
 	// take current velocity and convert to krpm
 	speed = _IQmpy(

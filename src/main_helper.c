@@ -234,9 +234,9 @@ extern void HAL_overwriteSetupGpio(HAL_Handle halHandle)
 			GPIO_Direction_Output);
 
 	//*** config pin as input for gFlag_resetZeroPositionOffset
-	GPIO_setHigh(hal->gpioHandle, BUTTON_RESET_POS_OFFSET);
+	GPIO_setHigh(hal->gpioHandle, GPIO_BUTTON);
 	GPIO_setDirection(hal->gpioHandle,
-			BUTTON_RESET_POS_OFFSET,
+			GPIO_BUTTON,
 			GPIO_Direction_Input);
 }
 
