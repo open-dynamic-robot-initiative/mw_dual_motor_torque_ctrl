@@ -1353,10 +1353,16 @@ inline void genericQepIndexISR(const HAL_MtrSelect_e mtrNum)
 	uint32_t index_posn = QEP_read_posn_index_latch(halMtrObj->qepHandle);
 
 	if (gEnabledCanMessages & CAN_MBOX_OUT_ENC_INDEX) {
-		QEP_Obj *qep = (QEP_Obj *)halMtrObj->qepHandle;
 		// Convert index position from counts to mrev by dividing by the max.
 		// number of counts.
-		_iq index_pos_mrev = _IQ((float_t) index_posn / qep->QPOSMAX);
+		//QEP_Obj *qep = (QEP_Obj *)halMtrObj->qepHandle;
+		//_iq index_pos_mrev = _IQ((float_t) index_posn / qep->QPOSMAX);
+
+		// NOTE: The above led to slighly varying results when compared to
+		// PosConv (maybe because PosConv does some adjustment when aligning
+		// motors?). Just using the current PosConv position is theoretically
+		// not as precise but led to much better results in practice.
+		_iq index_pos_mrev = STPOSCONV_getPosition_mrev(st_obj[mtrNum].posConvHandle);
 		CAN_setEncoderIndex(mtrNum, index_pos_mrev);
 		CAN_send(CAN_MBOX_OUT_ENC_INDEX);
 	}
