@@ -121,7 +121,8 @@ extern "C" {
 // the typedefs
 
 //! \brief Status message bits.
-struct CAN_STATUSMSG_BITS {    // bits   description
+struct CAN_STATUSMSG_BITS
+{                              // bits
    uint16_t system_enabled:1;  // 0
    uint16_t motor1_enabled:1;  // 1
    uint16_t motor1_ready:1;    // 2
@@ -129,14 +130,25 @@ struct CAN_STATUSMSG_BITS {    // bits   description
    uint16_t motor2_ready:1;    // 4
    //! \see \ref ErrorCodes
    uint16_t error_code:3;      // 5-7
-   uint16_t rsvd:8;            // 8-15  reserved
+   uint16_t rsvd:8;            // 8-15
 };
 
 //! \brief Status message that allows integer or bit access.
-typedef union _CAN_StatusMsg_t_ {
+typedef union _CAN_StatusMsg_t_
+{
    uint16_t              all;
    struct CAN_STATUSMSG_BITS  bit;
 } CAN_StatusMsg_t;
+
+
+//! \brief Command message.
+typedef struct _CAN_Command_t_
+{
+	//! \brief Command ID
+	uint32_t id;
+	//! \brief Value of the command
+	uint32_t value;
+} CAN_Command_t;
 
 
 // **************************************************************************
@@ -205,6 +217,32 @@ inline void CAN_setEncoderIndex(uint16_t mtrNum, _iq index_position)
 	ECanaMboxes.MBOX10.MDL.all = index_position;
 }
 
+
+//! \brief Get the last command message that was received.
+//! \returns Last received command message.
+inline CAN_Command_t CAN_getCommand()
+{
+	CAN_Command_t cmd;
+
+	cmd.id = ECanaMboxes.MBOX0.MDH.all;
+	cmd.value = ECanaMboxes.MBOX0.MDL.all;
+
+	return cmd;
+}
+
+
+//! \brief Get the last Iq reference that was received.
+//! \param mtrNum Number of the motor
+//! \returns Last received IqRef value for the specified motor.
+inline _iq CAN_getIqRef(uint16_t mtrNum)
+{
+	if (mtrNum == HAL_MTR1) {
+		return ECanaMboxes.MBOX1.MDL.all;
+	} else {
+		return ECanaMboxes.MBOX1.MDH.all;
+	}
+}
+
 //! \brief Send data of the specified mailboxes
 //!
 //! To specify the mailboxes, use the CAN_MBOX_OUT_xy defines for this. Example:
@@ -238,6 +276,70 @@ inline void CAN_abort(uint32_t mailboxes)
 	//while ((ECanaRegs.CANTRS.all & mailboxes) != 0);
 
 	return;
+}
+
+
+//! \brief Check if received message pending flag is set.
+//!
+//! Check if the "received message pending" flag is set for the specified
+//! mailbox.  To clear the flag, use CAN_clearReceivedMessagePending().
+//!
+//! \param mailbox_mask Bitmask that specifies the mailbox.  If you specify more
+//! 	than one mailbox in the mask, this function will return true if a
+//! 	message is pending in at least one of the mailboxes.
+//! \returns True if a new message is pending in the specified mailbox.
+inline bool CAN_checkReceivedMessagePending(uint32_t mailbox_mask)
+{
+	return ECanaRegs.CANRMP.all & mailbox_mask;
+}
+
+
+//! \brief Clear received message pending flag.
+//! \param mailbox_mask Bitmask that specifies the mailbox.  If you specify more
+//! 	than one mailbox in the mask, the flag is reset for each of them.
+inline void CAN_clearReceivedMessagePending(uint32_t mailbox_mask)
+{
+	// reset bit (have to write a 1 to get a 0)
+	ECanaRegs.CANRMP.all = mailbox_mask;
+}
+
+
+//! \brief Check if new message arrived and acknowledge if yes.
+//!
+//! Check if the "received message pending" flag for the specified mailbox.  If
+//! yes, the message is acknowledged (i.e. the flag is reset).
+//!
+//! \param mailbox_mask Bitmask that specifies the mailbox.  If you specify more
+//! 	than one mailbox in the mask, this function will return true if a
+//! 	message is pending in at least one of the mailboxes.
+//! \returns True if a new message is pending in the specified mailbox.
+inline bool CAN_checkAndClearRMP(uint32_t mailbox_mask)
+{
+	if (CAN_checkReceivedMessagePending(mailbox_mask))
+	{
+		CAN_clearReceivedMessagePending(mailbox_mask);
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+
+//! \brief Check if a message is waiting for transmission
+//!
+//! Check if a message is waiting for transmission (i.e. the TRS bit is set) in
+//! the specified mailbox.  If more then one mailbox is specified, it is checked
+//! if at least one of them has a pending message.
+//!
+//! \param mailbox_mask Bitmask that specifies the mailbox(es).  See the
+//! 	CAN_MBOX_OUT_* defines.
+//! \returns True if a message is waiting for transmission in one of the
+//! 	specified mailboxes.
+inline bool CAN_checkTransmissionPending(uint32_t mailbox_mask)
+{
+	return ECanaRegs.CANTRS.all & mailbox_mask;
 }
 
 

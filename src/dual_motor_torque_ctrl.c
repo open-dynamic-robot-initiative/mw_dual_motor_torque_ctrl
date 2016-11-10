@@ -871,12 +871,10 @@ void generic_motor_ISR(
 				            VIRTUALSPRING_getIqRef_A(springHandle[mtrNum]);
 				}
 				else if (gFlag_enableCan) {
-					if (mtrNum == HAL_MTR1) {
-						gMotorVars[mtrNum].IqRef_A = ECanaMboxes.MBOX1.MDL.all;
-					} else {
-						gMotorVars[mtrNum].IqRef_A = ECanaMboxes.MBOX1.MDH.all;
-					}
+					gMotorVars[mtrNum].IqRef_A = CAN_getIqRef(mtrNum);
 				}
+				// else: do nothing. This allows setting IqRef_A from a GUI or
+				// debug session.
 
 
 				gIdq_ref_pu[mtrNum].value[0] = _IQmpy(
@@ -1054,46 +1052,45 @@ interrupt void can1_ISR()
 	// (there shouldn't be any).
 	// Note: ECanaRegs.CANGIF1.bit.MIV1 contains the number of the mailbox that
 	// caused this interrupt (this should always be 0 for now).
-	if (ECanaRegs.CANRMP.bit.RMP0 == 1)
+	if (CAN_checkReceivedMessagePending(CAN_MBOX_IN_COMMANDS))
 	{
-		uint32_t cmd_id = ECanaMboxes.MBOX0.MDH.all;
-		uint32_t cmd_val = ECanaMboxes.MBOX0.MDL.all;
+		CAN_Command_t cmd = CAN_getCommand();
 
-		switch (cmd_id)
+		switch (cmd.id)
 		{
 		case CAN_CMD_ENABLE_SYS: // enable system
-			gMotorVars[HAL_MTR1].Flag_enableSys = cmd_val;
+			gMotorVars[HAL_MTR1].Flag_enableSys = cmd.value;
 			break;
 		case CAN_CMD_ENABLE_MTR1: // run motor 1
-			gMotorVars[HAL_MTR1].Flag_Run_Identify = cmd_val;
+			gMotorVars[HAL_MTR1].Flag_Run_Identify = cmd.value;
 			break;
 		case CAN_CMD_ENABLE_MTR2: // run motor 2
-			gMotorVars[HAL_MTR2].Flag_Run_Identify = cmd_val;
+			gMotorVars[HAL_MTR2].Flag_Run_Identify = cmd.value;
 			break;
 		case CAN_CMD_ENABLE_VSPRING1: // motor 1 enable spring
-			spring[HAL_MTR1].enabled = cmd_val;
+			spring[HAL_MTR1].enabled = cmd.value;
 			break;
 		case CAN_CMD_ENABLE_VSPRING2: // motor 2 enable spring
-			spring[HAL_MTR2].enabled = cmd_val;
+			spring[HAL_MTR2].enabled = cmd.value;
 			break;
 
 		case CAN_CMD_SEND_CURRENT:
-			setCanMboxStatus(CAN_MBOX_OUT_Iq, cmd_val);
+			setCanMboxStatus(CAN_MBOX_OUT_Iq, cmd.value);
 			break;
 		case CAN_CMD_SEND_POSITION:
-			setCanMboxStatus(CAN_MBOX_OUT_ENC_POS, cmd_val);
+			setCanMboxStatus(CAN_MBOX_OUT_ENC_POS, cmd.value);
 			break;
 		case CAN_CMD_SEND_VELOCITY:
-			setCanMboxStatus(CAN_MBOX_OUT_SPEED, cmd_val);
+			setCanMboxStatus(CAN_MBOX_OUT_SPEED, cmd.value);
 			break;
 		case CAN_CMD_SEND_ADC6:
-			setCanMboxStatus(CAN_MBOX_OUT_ADC6, cmd_val);
+			setCanMboxStatus(CAN_MBOX_OUT_ADC6, cmd.value);
 			break;
 		case CAN_CMD_SEND_ENC_INDEX:
-			setCanMboxStatus(CAN_MBOX_OUT_ENC_INDEX, cmd_val);
+			setCanMboxStatus(CAN_MBOX_OUT_ENC_INDEX, cmd.value);
 			break;
 		case CAN_CMD_SEND_ALL:
-			if (cmd_val) {
+			if (cmd.value) {
 				gEnabledCanMessages = (CAN_MBOX_OUT_Iq
 						| CAN_MBOX_OUT_ENC_POS
 						| CAN_MBOX_OUT_SPEED
@@ -1104,14 +1101,14 @@ interrupt void can1_ISR()
 			}
 			break;
 		case CAN_CMD_SET_CAN_RECV_TIMEOUT:
-			gCanReceiveIqRefTimeout = cmd_val;
+			gCanReceiveIqRefTimeout = cmd.value;
 			break;
 		case CAN_CMD_ENABLE_POS_ROLLOVER_ERROR:
-			gFlag_enablePosRolloverError = cmd_val;
+			gFlag_enablePosRolloverError = cmd.value;
 		}
 
 		// Acknowledge interrupt
-		ECanaRegs.CANRMP.bit.RMP0 = 1; // clear by writing 1
+		CAN_clearReceivedMessagePending(CAN_MBOX_IN_COMMANDS);
 	}
 
 	// acknowledge interrupt from PIE
@@ -1132,7 +1129,7 @@ interrupt void timer0_ISR()
 
 	// TODO: better abortion handling
 	// If there is still an old message waiting for transmission, abort it
-	if (ECanaRegs.CANTRS.all & mbox_mask)
+	if (CAN_checkTransmissionPending(mbox_mask))
 	{
 		gCanAbortingMessages = true;
 		// TODO: notify about the issue
@@ -1318,7 +1315,7 @@ void maybeSendCanStatusMsg()
 			< (gTimer0_stamp - TIMER0_FREQ_Hz / CAN_STATUSMSG_TRANS_FREQ_Hz))
 	{
 		// If there is still an old message waiting for transmission, abort it
-		if (ECanaRegs.CANTRS.all & CAN_MBOX_OUT_STATUSMSG)
+		if (CAN_checkTransmissionPending(CAN_MBOX_OUT_STATUSMSG))
 		{
 			// TODO: notify about the issue
 			CAN_abort(CAN_MBOX_OUT_STATUSMSG);
@@ -1396,9 +1393,8 @@ void checkErrors()
 
 	// If new IqRef message was received via CAN, store the current time, so we
 	// can detect connection loss.
-	if (ECanaRegs.CANRMP.all & CAN_MBOX_IN_IqRef) {
-		// reset bit (have to write a 1 to get a 0)
-		ECanaRegs.CANRMP.all = CAN_MBOX_IN_IqRef;
+	// FIXME: I think this should move to somewhere else
+	if (CAN_checkAndClearRMP(CAN_MBOX_IN_IqRef)) {
 		gCanLastReceivedIqRef_stamp = gTimer0_stamp;
 	}
 
