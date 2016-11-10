@@ -1403,9 +1403,14 @@ void checkErrors()
 	}
 
 	gErrors.bit.can_recv_timeout = (
-			(gMotorVars[0].Flag_Run_Identify || gMotorVars[1].Flag_Run_Identify)
-			&& gFlag_enableCan
-			&& gCanReceiveIqRefTimeout != 0
+			gFlag_enableCan  // only check if CAN is enabled
+			&& gCanReceiveIqRefTimeout != 0 // and timeout is enabled
+			// check if one of the motors is enabled and has a IqRef != 0
+			&& ((gMotorVars[HAL_MTR1].Flag_Run_Identify
+					&& gMotorVars[HAL_MTR1].IqRef_A != 0)
+					|| (gMotorVars[HAL_MTR2].Flag_Run_Identify
+							&& gMotorVars[HAL_MTR2].IqRef_A != 0))
+			// finally check if last message exceeds timeout
 			&& (gCanLastReceivedIqRef_stamp
 					< gTimer0_stamp - gCanReceiveIqRefTimeout)
 			);
