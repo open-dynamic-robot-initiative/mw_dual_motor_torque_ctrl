@@ -1039,7 +1039,7 @@ interrupt void can1_ISR()
 
 	// This ISR is used by GIF1
 
-	// TODO: SPRU074F, sec. 3.4.3.2 describes how to correctly handle all cases
+	// NOTE: SPRU074F, sec. 3.4.3.2 describes how to correctly handle all cases
 	// (I don't fully understand what is meant by a "half-word read", though).
 
 	// Since this ISR is currently only used for mailbox 0 receives, we only
@@ -1122,29 +1122,34 @@ interrupt void timer0_ISR()
 	// from the mask.
 	mbox_mask &= ~CAN_MBOX_OUT_ENC_INDEX;
 
-	// TODO: better abortion handling
-	// If there is still an old message waiting for transmission, abort it
-	if (CAN_checkTransmissionPending(mbox_mask))
+	// If no mailbox is enabled, skip this (mostly to not disturb CAN error
+	// detection (gCanAbortingMessages would always be set to false when nothing
+	// is sent here, independent of errors with the status message).
+	if (mbox_mask != 0)
 	{
-		gCanAbortingMessages = true;
-		// TODO: notify about the issue
-		CAN_abort(mbox_mask);
-		// is it okay to block here (or at least wait for a while)?
+		// TODO: better abortion handling
+		// If there is still an old message waiting for transmission, abort it
+		if (CAN_checkTransmissionPending(mbox_mask))
+		{
+			gCanAbortingMessages = true;
+			CAN_abort(mbox_mask);
+			// is it okay to block here (or at least wait for a while)?
+		}
+		else
+		{
+			gCanAbortingMessages = false;
+		}
+
+		setCanMotorData(HAL_MTR1);
+		setCanMotorData(HAL_MTR2);
+
+		CAN_setAdcIn6Values(
+				HAL_readAdcResult(halHandle, POTI_RESULT1),
+				HAL_readAdcResult(halHandle, POTI_RESULT2));
+
+		// send messages via CAN
+		CAN_send(mbox_mask);
 	}
-	else
-	{
-		gCanAbortingMessages = false;
-	}
-
-	setCanMotorData(HAL_MTR1);
-	setCanMotorData(HAL_MTR2);
-
-	CAN_setAdcIn6Values(
-			HAL_readAdcResult(halHandle, POTI_RESULT1),
-			HAL_readAdcResult(halHandle, POTI_RESULT2));
-
-	// send messages via CAN
-	CAN_send(mbox_mask);
 
 	// acknowledge interrupt
     HAL_acqTimer0Int(halHandle);
@@ -1312,9 +1317,12 @@ void maybeSendCanStatusMsg()
 		// If there is still an old message waiting for transmission, abort it
 		if (CAN_checkTransmissionPending(CAN_MBOX_OUT_STATUSMSG))
 		{
-			// TODO: notify about the issue
+			gCanAbortingMessages = true;
 			CAN_abort(CAN_MBOX_OUT_STATUSMSG);
-			// is it okay to block here (or at least wait for a while)?
+		}
+		else
+		{
+			gCanAbortingMessages = false;
 		}
 
 		setCanStatusMsg();
