@@ -612,11 +612,6 @@ void main(void)
 		// Motor 1 Flag_enableSys is the master control.
 		while(!(gMotorVars[HAL_MTR1].Flag_enableSys))
 		{
-			// Don't allow motors to be enabled while system is disabled
-			//FIXME maybe problem if enable sys and enable motor messages are sent directly in row?
-			gMotorVars[HAL_MTR1].Flag_Run_Identify = false;
-			gMotorVars[HAL_MTR2].Flag_Run_Identify = false;
-
 			LED_run(halHandle);
 
 			//checkErrors();
