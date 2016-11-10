@@ -162,11 +162,14 @@ typedef struct _CAN_Command_t_
 //! \brief Initialize the eCAN-A GPIOs
 extern void CAN_initECanaGpio(HAL_Handle halHandle);
 
+
 //! \brief Initialize eCAN-A module
 extern void CAN_initECana();
 
+
 //! \brief Setup mailboxes
 extern void CAN_setupMboxes();
+
 
 //! \brief Write status message to the corresponding transmission mailbox.
 inline void CAN_setStatusMsg(CAN_StatusMsg_t statusmsg)
@@ -176,9 +179,13 @@ inline void CAN_setStatusMsg(CAN_StatusMsg_t statusmsg)
 	return;
 }
 
-//! \brief Write motor data of motor 1 to the corresponding transmission mailboxes
+
+//! \brief Write motor data of motor 1 to the corresponding transmission
+//! 	mailboxes.
+//!
 //! \param current_iq  The current Iq of the motor in A.
-//! \param encoder_position  Current position of the motor in mechanical revolutions (mrev).
+//! \param encoder_position  Current position of the motor in mechanical
+//!                          revolutions (mrev).
 //! \param velocity  Velocity of the motor in krpm.
 inline void CAN_setDataMotor1(_iq current_iq, _iq position, _iq velocity)
 {
@@ -189,11 +196,16 @@ inline void CAN_setDataMotor1(_iq current_iq, _iq position, _iq velocity)
 	return;
 }
 
-//! \brief Write motor data of motor 2 to the corresponding transmission mailboxes
+
+//! \brief Write motor data of motor 2 to the corresponding transmission
+//! 	mailboxes.
+//!
 //! \param current_iq  The current Iq of the motor in A.
-//! \param encoder_position  Current position of the motor in mechanical revolutions (mrev).
+//! \param encoder_position  Current position of the motor in mechanical
+//!                          revolutions (mrev).
 //! \param velocity  Velocity of the motor in krpm.
-inline void CAN_setDataMotor2(_iq current_iq, _iq encoder_position, _iq velocity)
+inline void CAN_setDataMotor2(_iq current_iq, _iq encoder_position,
+		_iq velocity)
 {
 	ECanaMboxes.MBOX14.MDH.all = current_iq;
 	ECanaMboxes.MBOX13.MDH.all = encoder_position;
@@ -202,7 +214,10 @@ inline void CAN_setDataMotor2(_iq current_iq, _iq encoder_position, _iq velocity
 	return;
 }
 
-//! \brief Write readings of ADCINA6 and B6 to the corresponding transmission mailbox
+
+//! \brief Write readings of ADCINA6 and B6 to the corresponding transmission
+//! 	mailbox.
+//!
 //! \param adcin_a6 Result of ADCINA6
 //! \param adcin_b6 Result of ADCINB6
 inline void CAN_setAdcIn6Values(_iq adcin_a6, _iq adcin_b6)
@@ -211,6 +226,12 @@ inline void CAN_setAdcIn6Values(_iq adcin_a6, _iq adcin_b6)
 	ECanaMboxes.MBOX11.MDH.all = adcin_b6;
 }
 
+
+//! \brief Write encoder index position to the corresponding transmission
+//! 	mailbox.
+//!
+//! \param mtrNum Number of the motor (either 0 or 1).
+//! \param index_position Position of the motor when the index occured [mrev].
 inline void CAN_setEncoderIndex(uint16_t mtrNum, _iq index_position)
 {
 	ECanaMboxes.MBOX10.MDH.byte.BYTE4 = mtrNum & 0xFF;
@@ -219,6 +240,7 @@ inline void CAN_setEncoderIndex(uint16_t mtrNum, _iq index_position)
 
 
 //! \brief Get the last command message that was received.
+//!
 //! \returns Last received command message.
 inline CAN_Command_t CAN_getCommand()
 {
@@ -232,6 +254,7 @@ inline CAN_Command_t CAN_getCommand()
 
 
 //! \brief Get the last Iq reference that was received.
+//!
 //! \param mtrNum Number of the motor
 //! \returns Last received IqRef value for the specified motor.
 inline _iq CAN_getIqRef(uint16_t mtrNum)
@@ -242,6 +265,7 @@ inline _iq CAN_getIqRef(uint16_t mtrNum)
 		return ECanaMboxes.MBOX1.MDH.all;
 	}
 }
+
 
 //! \brief Send data of the specified mailboxes
 //!
@@ -268,6 +292,9 @@ inline void CAN_send(uint32_t mailboxes)
 }
 
 
+//! \brief Abort pending transmissions of the specified mailboxes.
+//!
+//! \param mailboxes  A bitmap specifying the mailboxes to be send.
 inline void CAN_abort(uint32_t mailboxes)
 {
 	// request transmission reset
@@ -295,6 +322,7 @@ inline bool CAN_checkReceivedMessagePending(uint32_t mailbox_mask)
 
 
 //! \brief Clear received message pending flag.
+//!
 //! \param mailbox_mask Bitmask that specifies the mailbox.  If you specify more
 //! 	than one mailbox in the mask, the flag is reset for each of them.
 inline void CAN_clearReceivedMessagePending(uint32_t mailbox_mask)
