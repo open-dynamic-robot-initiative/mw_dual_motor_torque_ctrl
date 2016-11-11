@@ -517,7 +517,6 @@ void main(void)
 			gFlux_pu_to_VpHz_sf[mtrNum] = USER_computeFlux_pu_to_VpHz_sf(
 					&gUserParams[mtrNum]);
 
-			// FIXME investigate!
 			gTorque_Ls_Id_Iq_pu_to_Nm_sf[mtrNum] =
 			        USER_computeTorque_Ls_Id_Iq_pu_to_Nm_sf(
 			                &gUserParams[mtrNum]);
@@ -535,7 +534,6 @@ void main(void)
 					/ ((float_t)gUserParams[mtrNum].motor_numPolePairs
 					        * 1000.0));
 
-			// FIXME use this?
 			gCurrent_A_to_pu_sf[mtrNum] = _IQ(
 					1.0 / gUserParams[mtrNum].iqFullScaleCurrent_A);
 
@@ -981,11 +979,9 @@ void generic_motor_ISR(
 
 
 				gIdq_ref_pu[mtrNum].value[0] = _IQmpy(
-				        gMotorVars[mtrNum].IdRef_A,
-				        _IQ(1.0 / USER_IQ_FULL_SCALE_CURRENT_A));
+				        gMotorVars[mtrNum].IdRef_A, gCurrent_A_to_pu_sf[mtrNum]);
 				gIdq_ref_pu[mtrNum].value[1] = _IQmpy(
-				        gMotorVars[mtrNum].IqRef_A,
-				        _IQ(1.0 / USER_IQ_FULL_SCALE_CURRENT_A));
+				        gMotorVars[mtrNum].IqRef_A, gCurrent_A_to_pu_sf[mtrNum]);
 			}
 
 			// generate the motor electrical angle
@@ -1015,7 +1011,7 @@ void generic_motor_ISR(
 
 			// set D-axis current to Rs estimation current
 			gIdq_ref_pu[mtrNum].value[0] = _IQmpy(user_motor_res_est_current,
-			        _IQ(1.0 / USER_IQ_FULL_SCALE_CURRENT_A));
+			        gCurrent_A_to_pu_sf[mtrNum]);
 			// set Q-axis current to 0
 			gIdq_ref_pu[mtrNum].value[1] = _IQ(0.0);
 
