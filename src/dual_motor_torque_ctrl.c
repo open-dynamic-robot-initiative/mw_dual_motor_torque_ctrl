@@ -276,15 +276,10 @@ MATH_vec2 gIdq_pu[2] = {
 		{_IQ(0.0), _IQ(0.0)}
 };
 
-_iq gFlux_pu_to_Wb_sf[2];
-
-_iq gFlux_pu_to_VpHz_sf[2];
 
 _iq gTorque_Ls_Id_Iq_pu_to_Nm_sf[2];
 
 _iq gTorque_Flux_Iq_pu_to_Nm_sf[2];
-
-_iq gSpeed_krpm_to_pu_sf[2];
 
 _iq gSpeed_pu_to_krpm_sf[2];
 
@@ -511,11 +506,6 @@ void main(void)
 			        &park[mtrNum], sizeof(park[mtrNum]));
 
 			// compute scaling factors for flux and torque calculations
-			gFlux_pu_to_Wb_sf[mtrNum] = USER_computeFlux_pu_to_Wb_sf(
-					&gUserParams[mtrNum]);
-
-			gFlux_pu_to_VpHz_sf[mtrNum] = USER_computeFlux_pu_to_VpHz_sf(
-					&gUserParams[mtrNum]);
 
 			gTorque_Ls_Id_Iq_pu_to_Nm_sf[mtrNum] =
 			        USER_computeTorque_Ls_Id_Iq_pu_to_Nm_sf(
@@ -524,10 +514,6 @@ void main(void)
 			gTorque_Flux_Iq_pu_to_Nm_sf[mtrNum] =
 			        USER_computeTorque_Flux_Iq_pu_to_Nm_sf(
 			                &gUserParams[mtrNum]);
-
-			gSpeed_krpm_to_pu_sf[mtrNum] = _IQ(
-					(float_t)gUserParams[mtrNum].motor_numPolePairs * 1000.0
-					/ (gUserParams[mtrNum].iqFullScaleFreq_Hz * 60.0));
 
 			gSpeed_pu_to_krpm_sf[mtrNum] = _IQ(
 					(gUserParams[mtrNum].iqFullScaleFreq_Hz * 60.0)
