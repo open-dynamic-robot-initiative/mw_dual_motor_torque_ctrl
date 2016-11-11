@@ -224,7 +224,7 @@ bool gFlag_resetZeroPositionOffset = false;
 //!
 //! \note For applications where rollovers are expected (i.e. motor spinning
 //! freely), this should be disabled!
-bool gFlag_enablePosRolloverError = true;
+bool gFlag_enablePosRolloverError = false;
 
 //! \}
 
