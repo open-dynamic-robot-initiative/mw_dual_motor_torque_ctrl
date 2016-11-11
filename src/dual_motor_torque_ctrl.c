@@ -1346,6 +1346,14 @@ void updateGlobalVariables(const uint_least8_t mtrNum)
 			_IQsqrt(_IQmpy(gMotorVars[mtrNum].Id_A, gMotorVars[mtrNum].Id_A)
 			+ _IQmpy(gMotorVars[mtrNum].Iq_A, gMotorVars[mtrNum].Iq_A));
 
+	// get the torque estimate
+	gMotorVars[mtrNum].Torque_Nm = computeTorque_Nm(
+			estHandle[mtrNum],
+			gIdq_pu[mtrNum],
+			gTorque_Flux_Iq_pu_to_Nm_sf[mtrNum],
+			gTorque_Ls_Id_Iq_pu_to_Nm_sf[mtrNum]);
+
+
 	// get the Position Converter error
 	gMotorVars[mtrNum].SpinTAC.PosConvErrorID =
 			STPOSCONV_getErrorID(st_obj[mtrNum].posConvHandle);

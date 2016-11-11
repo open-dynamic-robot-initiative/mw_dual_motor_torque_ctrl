@@ -83,4 +83,13 @@ void setupQepIndexInterrupt(HAL_Handle halHandle,
 		PIE_IntVec_t qep1IndexIsr,
 		PIE_IntVec_t qep2IndexIsr);
 
+
+//! \brief Computes Torque in Nm
+//!
+//! This is a modified version of the function from user.c which does not need a
+//! CTRL_Handle.
+_iq computeTorque_Nm(EST_Handle estHandle, MATH_vec2 Idq_pu,
+		const _iq torque_Flux_sf, const _iq torque_Ls_sf);
+
+
 #endif /* SRC_MAIN_HELPER_H_ */
