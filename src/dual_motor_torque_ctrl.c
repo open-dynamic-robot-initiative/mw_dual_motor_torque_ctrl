@@ -231,7 +231,7 @@ bool gFlag_enablePosRolloverError = true;
 
 //! \name Data Variables
 //! \brief These variables are used to store data values like measured current,
-//! 	voltage, reference values in pu, etc.
+//! 	voltage, reference values in pu, scale factors, etc.
 //! \{
 
 //! \brief Contains the pwm values for each phase.
@@ -277,12 +277,16 @@ MATH_vec2 gIdq_pu[2] = {
 };
 
 
+//! \brief Some scale factor used for torque computation
 _iq gTorque_Ls_Id_Iq_pu_to_Nm_sf[2];
 
+//! \brief Some scale factor used for torque computation
 _iq gTorque_Flux_Iq_pu_to_Nm_sf[2];
 
+//! \brief Scale factor to convert speed from pu to krpm
 _iq gSpeed_pu_to_krpm_sf[2];
 
+//! \brief Scale factor to convert current from A to pu
 _iq gCurrent_A_to_pu_sf[2];
 
 //! Offset that is removed from the position before sending it via CAN.
