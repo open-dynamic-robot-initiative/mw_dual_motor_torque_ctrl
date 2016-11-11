@@ -78,121 +78,203 @@ volatile struct ECAN_REGS ECanaRegs;
 #pragma DATA_SECTION(ECanaMboxes,"ECanaMboxesFile");
 volatile struct ECAN_MBOXES ECanaMboxes;
 
-CLARKE_Handle   clarkeHandle_I[2];  //!< the handle for the current Clarke
-									//!< transform
-CLARKE_Obj      clarke_I[2];        //!< the current Clarke transform object
+//! \name Objects and Handles
+//! \brief State objects and handles for the used software modules
+//!
+//! Typically each module of the MotorWare library has an object type that
+//! stores the state of the object as well as a handle type that is simply a
+//! pointer to the object.  When calling functions of the module, the handle is
+//! passed so that the function can operate on the current state.
+//!
+//! For most of the modules there are two object instances, one for each motor
+//! (the first one in the array refers to HAL_MTR1, the second one to HAL_MTR2).
+//!
+//! \{
 
-PARK_Handle     parkHandle[2];      //!< the handle for the current Parke
-									//!< transform
-PARK_Obj        park[2];            //!< the current Parke transform object
+//! \brief The handles for the hardware abstraction layer for common CPU setup
+HAL_Handle halHandle;
+//! \brief The hardware abstraction layer object
+HAL_Obj hal;
 
-CLARKE_Handle   clarkeHandle_V[2];  //!< the handle for the voltage Clarke
-									//!< transform
-CLARKE_Obj      clarke_V[2];        //!< the voltage Clarke transform object
+//! \brief The handles for the hardware abstraction layer specific to the motor
+//! 	board.
+HAL_Handle_mtr halHandleMtr[2];
+//! \brief The hardware abstraction layer object specific to the motor board.
+HAL_Obj_mtr halMtr[2];
 
-EST_Handle      estHandle[2];       //!< the handle for the estimator
+//! \brief The handles for the current Clarke transform
+CLARKE_Handle clarkeHandle_I[2];
+//! \brief The current Clarke transform objects
+CLARKE_Obj clarke_I[2];
 
-PID_Obj         pid[2][3];          //!< three objects for PID controllers
-									//!< 0 - Speed, 1 - Id, 2 - Iq
-PID_Handle      pidHandle[2][3];    //!< three handles for PID controllers
-									//!< 0 - Speed, 1 - Id, 2 - Iq
-uint16_t        stCntSpeed[2] = {0, 0};      //!< count variable to decimate the execution
-									//!< of SpinTAC Velocity Control
-uint16_t        stCntPosConv[2] = {0, 0}; //!< count variable to decimate the
-                                          //!< execution of SpinTAC Position Converter
-//! Store this to array so it can be used in generic_motor_ISR.
-const uint16_t  gNumIsrTicksPerPosConvTick[2] = {
-        ISR_TICKS_PER_POSCONV_TICK,
-        ISR_TICKS_PER_POSCONV_TICK_2
-};
+//! \brief The handles for the current Park transfrom
+PARK_Handle parkHandle[2];
+//! \brief The current Parke transform objects
+PARK_Obj park[2];
 
-IPARK_Handle    iparkHandle[2];     //!< the handle for the inverse Park
-									//!< transform
-IPARK_Obj       ipark[2];           //!< the inverse Park transform object
+//! \brief The handles for the voltage Clarke transform
+CLARKE_Handle clarkeHandle_V[2];
+//! \brief The voltage Clarke transform objects
+CLARKE_Obj clarke_V[2];
 
-SVGEN_Handle    svgenHandle[2];     //!< the handle for the space vector generator
-SVGEN_Obj       svgen[2];           //!< the space vector generator object
+//! \brief The handles for the inverse Park transform
+IPARK_Handle iparkHandle[2];
+//! \brief The inverse Park transform object
+IPARK_Obj ipark[2];
 
-ENC_Handle      encHandle[2];      //!< the handle for the encoder
-ENC_Obj         enc[2];            //!< the encoder object
+//! \brief The handles for the estimator
+//!
+//! There is no EST_Obj because this is stored in the ROM of the MCU.
+EST_Handle estHandle[2];
 
-SLIP_Handle     slipHandle[2];     //!< the handle for the slip compensator
-SLIP_Obj        slip[2];           //!< the slip compensator object
+//! \brief The handles for the PID controllers
+//!
+//! First dimention: 0 = motor 1, 1 = motor 2
+//! Second dimention: 0 = Speed, 1 = Id, 2 = Iq
+PID_Handle pidHandle[2][3];
+//! \brief The objects for the PID controllers
+PID_Obj pid[2][3];
 
-HAL_Handle      halHandle;         //!< the handle for the hardware abstraction
-								   //!< layer for common CPU setup
-HAL_Obj         hal;               //!< the hardware abstraction layer object
+//! \brief The handles for the space vector generator
+SVGEN_Handle svgenHandle[2];
+//! \brief The space vector generator objects
+SVGEN_Obj svgen[2];
 
-ANGLE_COMP_Handle    angleCompHandle[2];  //!< the handle for the angle compensation
-ANGLE_COMP_Obj       angleComp[2];        //!< the angle compensation object
+//! \brief The handles for the encoder
+ENC_Handle encHandle[2];
+//! \brief The encoder objects
+ENC_Obj enc[2];
 
-HAL_Handle_mtr  halHandleMtr[2]; //!< the handle for the hardware abstraction
-								 //!< layer specific to the motor board.
-HAL_Obj_mtr     halMtr[2];       //!< the hardware abstraction layer object
-                                 //!< specific to the motor board.
+//! \brief The handles for the slip compensator
+SLIP_Handle slipHandle[2];
+//! \brief The slip compensator objects
+SLIP_Obj slip[2];
 
-HAL_PwmData_t   gPwmData[2] = {{_IQ(0.0), _IQ(0.0), _IQ(0.0)},   //!< contains the
-		{_IQ(0.0), _IQ(0.0), _IQ(0.0)}};  //!< pwm values for each phase.
-										//!< -1.0 is 0%, 1.0 is 100%
+//! \brief The handles for the angle compensation
+ANGLE_COMP_Handle angleCompHandle[2];
+//! \brief The angle compensation objects
+ANGLE_COMP_Obj angleComp[2];
 
-HAL_AdcData_t   gAdcData[2];       //!< contains three current values, three
-								   //!< voltage values and one DC buss value
+//! \brief The handles for the 3 current and 3 voltage filters for offset
+//! 	calculation.
+FILTER_FO_Handle filterHandle[2][6];
+//! \brief the 3-current and 3-voltage filters for offset calculation of each
+//! 	motor.
+FILTER_FO_Obj filter[2][6];
 
-MATH_vec3       gOffsets_I_pu[2] = {{_IQ(0.0), _IQ(0.0), _IQ(0.0)},  //!< contains
-		{_IQ(0.0), _IQ(0.0), _IQ(0.0)}}; //!< the offsets for the current feedback
+//! \brief The handles for the SpinTAC objects
+ST_Handle stHandle[2];
+//! \brief The SpinTAC objects
+ST_Obj st_obj[2];
 
-MATH_vec3       gOffsets_V_pu[2] = {{_IQ(0.0), _IQ(0.0), _IQ(0.0)},  //!< contains
-		{_IQ(0.0), _IQ(0.0), _IQ(0.0)}}; //!< the offsets for the voltage feedback
-
-MATH_vec2       gIdq_ref_pu[2] = {{_IQ(0.0), _IQ(0.0)},  //!< contains the Id and
-		{_IQ(0.0), _IQ(0.0)}}; //!< Iq references
-
-
-MATH_vec2       gVdq_out_pu[2] = {{_IQ(0.0), _IQ(0.0)},  //!< contains the output
-		{_IQ(0.0), _IQ(0.0)}}; //!< Vd and Vq from the current controllers
-
-
-MATH_vec2       gIdq_pu[2] = {{_IQ(0.0), _IQ(0.0)},   //!< contains the Id and Iq
-		{_IQ(0.0), _IQ(0.0)}};  //!< measured values
-
-FILTER_FO_Handle  filterHandle[2][6];            //!< the handles for the 3-current and 3-voltage filters for offset calculation
-FILTER_FO_Obj     filter[2][6];                  //!< the 3-current and 3-voltage filters for offset calculation
-uint32_t gOffsetCalcCount[2] = {0, 0};
-
-USER_Params     gUserParams[2];
-
-uint32_t gAlignCount[2] = {0, 0};
-
-ST_Obj          st_obj[2];      //!< the SpinTAC objects
-ST_Handle       stHandle[2];    //!< the handles for the SpinTAC objects
-
+//! \brief The handles for the virtual spring objects
 VIRTUALSPRING_Handle springHandle[2];
+//! \brief The virtual spring objects
 VIRTUALSPRING_Obj spring[2];
 
+//! \}
+
+//! \name Counters
+//! \brief Counter variables used for decimation and timing of processes
+//! \{
+
+//! \brief Count variable to decimate the execution of the high-level controller
+uint16_t stCntSpeed[2] = {0, 0};
+
+//! \brief Count variable to decimate the execution of SpinTAC Position
+//! 	Converter
+uint16_t stCntPosConv[2] = {0, 0};
+
+//! \brief Count variable to measure duration of the offset calculation
+uint32_t gOffsetCalcCount[2] = {0, 0};
+
+//! \brief Count variable to measure duration of the motor alignment
+uint32_t gAlignCount[2] = {0, 0};
+
+//! \}
+
+
+//! \name Enable Flags
+//! \brief Flags to enable/disable parts of the program
+//! \{
+
+//! \brief Set this to true to enable the virtual spring mode. One flag for each
+//! 	motor.
 bool gFlag_enableVirtualSpring[2] = {false, false};
+
+//! \brief When true, IqRef is set based on received CAN messages.
+//!
+//! Set this to false when you want to set current references directly to
+//! gMotorVars[i].IqRef_A, for example when using the GUI.  Otherwise manually
+//! set values will immediately be overwritten by the value in the CAN mailbox.
 bool gFlag_enableCan = true;
 
-uint16_t gLEDcnt[2] = {0, 0};
+//! While set, the current position is stored as offset which is removed from
+//! the position before sending it via CAN (i.e. the current position becomes
+//! zero).
+//! \note This feature is currently disabled!
+bool gFlag_resetZeroPositionOffset = false;
 
-volatile MOTOR_Vars_t gMotorVars[2] = {MOTOR_Vars_INIT_Mtr1, MOTOR_Vars_INIT_Mtr2};   //!< the global motor
-//!< variables that are defined in main.h and
-//!< used for display in the debugger's watch
-//!< window
+//! \brief If true, a rollover of the PosConv module will trigger an error.
+//!
+//! This is nice for position control applications where the motor is not
+//! expected to move far enough to ever observe an rollover.  By throwing an
+//! error in the case it happens nonetheless, it is ensured that the system will
+//! not explode.
+//!
+//! \note For applications where rollovers are expected (i.e. motor spinning
+//! freely), this should be disabled!
+bool gFlag_enablePosRolloverError = true;
 
-#ifdef FLASH
-// Used for running BackGround in flash, and ISR in RAM
-extern uint16_t *RamfuncsLoadStart, *RamfuncsLoadEnd, *RamfuncsRunStart;
-#endif
+//! \}
 
-#ifdef DRV8301_SPI
-// Watch window interface to the 8301 SPI
-DRV_SPI_8301_Vars_t gDrvSpi8301Vars[2];
-#endif
 
-#ifdef DRV8305_SPI
-// Watch window interface to the 8305 SPI
-DRV_SPI_8305_Vars_t gDrvSpi8305Vars[2];
-#endif
+//! \name Data Variables
+//! \brief These variables are used to store data values like measured current,
+//! 	voltage, reference values in pu, etc.
+//! \{
+
+//! \brief Contains the pwm values for each phase.
+//!
+//! -1.0 is 0%, 1.0 is 100%
+HAL_PwmData_t gPwmData[2] = {
+		{_IQ(0.0), _IQ(0.0), _IQ(0.0)},
+		{_IQ(0.0), _IQ(0.0), _IQ(0.0)}
+};
+
+//! \brief Contains three current values, three voltage values and one DC bus
+//! 	value.
+HAL_AdcData_t gAdcData[2];
+
+//! \brief Contains the offsets for the current feedback
+MATH_vec3 gOffsets_I_pu[2] = {
+		{_IQ(0.0), _IQ(0.0), _IQ(0.0)},
+		{_IQ(0.0), _IQ(0.0), _IQ(0.0)}
+};
+
+//! \brief Contains the offsets for the voltage feedback
+MATH_vec3 gOffsets_V_pu[2] = {
+		{_IQ(0.0), _IQ(0.0), _IQ(0.0)},
+		{_IQ(0.0), _IQ(0.0), _IQ(0.0)}
+};
+
+//! \brief Contains the Id and Iq references
+MATH_vec2 gIdq_ref_pu[2] = {
+		{_IQ(0.0), _IQ(0.0)},
+		{_IQ(0.0), _IQ(0.0)}
+};
+
+//! \brief Contains the output Vd and Vq from the current controllers
+MATH_vec2 gVdq_out_pu[2] = {
+		{_IQ(0.0), _IQ(0.0)},
+		{_IQ(0.0), _IQ(0.0)}
+};
+
+//! \brief Contains the Id and Iq measured values
+MATH_vec2 gIdq_pu[2] = {
+		{_IQ(0.0), _IQ(0.0)},
+		{_IQ(0.0), _IQ(0.0)}
+};
 
 _iq gFlux_pu_to_Wb_sf[2];
 
@@ -208,7 +290,46 @@ _iq gSpeed_pu_to_krpm_sf[2];
 
 _iq gCurrent_A_to_pu_sf[2];
 
-//uint32_t seq_counter = 0;
+//! Offset that is removed from the position before sending it via CAN.
+_iq gZeroPositionOffset[2] = {0, 0};
+
+//! \}
+
+
+//! \brief Decimation factor for the SpinTAC Position Converter
+//!
+//! Store this to array so it can be used in generic_motor_ISR.
+const uint16_t  gNumIsrTicksPerPosConvTick[2] = {
+        ISR_TICKS_PER_POSCONV_TICK,
+        ISR_TICKS_PER_POSCONV_TICK_2
+};
+
+//! \brief User Parameters
+//!
+//! Contains parameters from the user*.h config files.
+USER_Params gUserParams[2];
+
+//! \brief Global motor variables
+//!
+//! Several status information about the motors is stored here so they can be
+//! accessed from the debugger or the GUI.
+volatile MOTOR_Vars_t gMotorVars[2] = {MOTOR_Vars_INIT_Mtr1,
+		MOTOR_Vars_INIT_Mtr2};
+
+#ifdef FLASH
+// Used for running BackGround in flash, and ISR in RAM
+extern uint16_t *RamfuncsLoadStart, *RamfuncsLoadEnd, *RamfuncsRunStart;
+#endif
+
+#ifdef DRV8301_SPI
+// Watch window interface to the 8301 SPI
+DRV_SPI_8301_Vars_t gDrvSpi8301Vars[2];
+#endif
+
+#ifdef DRV8305_SPI
+// Watch window interface to the 8305 SPI
+DRV_SPI_8305_Vars_t gDrvSpi8305Vars[2];
+#endif
 
 //! Timestamp based on timer 0 (increased by one at each timer interrupt).
 uint32_t gTimer0_stamp = 0;
@@ -241,26 +362,6 @@ Error_t gErrors;
 QepIndexWatchdog_t gQepIndexWatchdog[2] = {
 		{.isInitialized = false, .indexError_counts = 0},
 		{.isInitialized = false, .indexError_counts = 0}};
-
-//! While set, the current position is stored as offset which is removed from
-//! the position before sending it via CAN (i.e. the current position becomes
-//! zero).
-//! \note This feature is currently disabled!
-bool gFlag_resetZeroPositionOffset = false;
-
-//! Offset that is removed from the position before sending it via CAN.
-_iq gZeroPositionOffset[2] = {0, 0};
-
-//! \brief If true, a rollover of the PosConv module will trigger an error.
-//!
-//! This is nice for position control applications where the motor is not
-//! expected to move far enough to ever observe an rollover.  By throwing an
-//! error in the case it happens nonetheless, it is ensured that the system will
-//! not explode.
-//!
-//! \note For applications where rollovers are expected (i.e. motor spinning
-//! freely), this should be disabled!
-bool gFlag_enablePosRolloverError = true;
 
 
 // **************************************************************************
@@ -321,10 +422,10 @@ void main(void)
 
 	// Overwrite GPIO Qualification Settings
 	// =====================================
-	// To allow fast movement with lots-of-lines-encoders, the sampling period of
-	// the GPIO qualification filter has to be reduced (otherwise encoder pulses
-	// get rejected as noise).  The following lines overwrite the settings done
-	// in HAL_setupGpio() (hal.c).
+	// To allow fast movement with lots-of-lines-encoders, the sampling period
+	// of the GPIO qualification filter has to be reduced (otherwise encoder
+	// pulses get rejected as noise).  The following lines overwrite the
+	// settings done in HAL_setupGpio() (hal.c).
 	// "period = 11" results in actual sampling period 11*2*(1/90MHz) = 0.24us
 	// Note: Setting the period is done for blocks of GPIO pins.
 	//
@@ -416,6 +517,7 @@ void main(void)
 			gFlux_pu_to_VpHz_sf[mtrNum] = USER_computeFlux_pu_to_VpHz_sf(
 					&gUserParams[mtrNum]);
 
+			// FIXME investigate!
 			gTorque_Ls_Id_Iq_pu_to_Nm_sf[mtrNum] =
 			        USER_computeTorque_Ls_Id_Iq_pu_to_Nm_sf(
 			                &gUserParams[mtrNum]);
@@ -433,6 +535,7 @@ void main(void)
 					/ ((float_t)gUserParams[mtrNum].motor_numPolePairs
 					        * 1000.0));
 
+			// FIXME use this?
 			gCurrent_A_to_pu_sf[mtrNum] = _IQ(
 					1.0 / gUserParams[mtrNum].iqFullScaleCurrent_A);
 
@@ -451,9 +554,11 @@ void main(void)
 
 			// There are two PI controllers, one for Iq and one for Id.
 			// This is for the Id current controller
-			pidHandle[mtrNum][1] = PID_init(&pid[mtrNum][1], sizeof(pid[mtrNum][1]));
+			pidHandle[mtrNum][1] = PID_init(&pid[mtrNum][1],
+					sizeof(pid[mtrNum][1]));
 			// This is for the Iq current controller
-			pidHandle[mtrNum][2] = PID_init(&pid[mtrNum][2], sizeof(pid[mtrNum][2]));
+			pidHandle[mtrNum][2] = PID_init(&pid[mtrNum][2],
+					sizeof(pid[mtrNum][2]));
 			// This sets up both controllers
 			pidSetup(pidHandle[mtrNum], gUserParams[mtrNum]);
 
@@ -510,7 +615,8 @@ void main(void)
 			        &spring[mtrNum], sizeof(spring[mtrNum]));
 			VIRTUALSPRING_setup(springHandle[mtrNum],
 			        10, _IQ(2.0),
-					STPOSCONV_getMRevMaximum_mrev(st_obj[mtrNum].posConvHandle));
+					STPOSCONV_getMRevMaximum_mrev(
+							st_obj[mtrNum].posConvHandle));
 
 		} // End of for loop
 	}
@@ -686,7 +792,8 @@ void main(void)
 						if (VIRTUALSPRING_isEnabled(springHandle[mtrNum])) {
 							// if virtual spring mode is just activated, reset
 							// position offset
-							VIRTUALSPRING_scheduleResetOffset(springHandle[mtrNum]);
+							VIRTUALSPRING_scheduleResetOffset(
+									springHandle[mtrNum]);
 						} else {
 							// if it is just disabled, set IqRef to 0
 							gMotorVars[mtrNum].IqRef_A = 0;
@@ -861,7 +968,8 @@ void generic_motor_ISR(
 				// If spring is enabled, set IqRef based on it
 				if (VIRTUALSPRING_isEnabled(springHandle[mtrNum])) {
 					VIRTUALSPRING_run(springHandle[mtrNum],
-							STPOSCONV_getPosition_mrev(st_obj[mtrNum].posConvHandle));
+							STPOSCONV_getPosition_mrev(
+									st_obj[mtrNum].posConvHandle));
 				    gMotorVars[mtrNum].IqRef_A =
 				            VIRTUALSPRING_getIqRef_A(springHandle[mtrNum]);
 				}
@@ -1362,7 +1470,8 @@ inline void genericQepIndexISR(const HAL_MtrSelect_e mtrNum)
 		// PosConv (maybe because PosConv does some adjustment when aligning
 		// motors?). Just using the current PosConv position is theoretically
 		// not as precise but led to much better results in practice.
-		_iq index_pos_mrev = STPOSCONV_getPosition_mrev(st_obj[mtrNum].posConvHandle);
+		_iq index_pos_mrev = STPOSCONV_getPosition_mrev(
+				st_obj[mtrNum].posConvHandle);
 		CAN_setEncoderIndex(mtrNum, index_pos_mrev);
 		CAN_send(CAN_MBOX_OUT_ENC_INDEX);
 	}
@@ -1396,7 +1505,6 @@ void checkErrors()
 
 	// If new IqRef message was received via CAN, store the current time, so we
 	// can detect connection loss.
-	// FIXME: I think this should move to somewhere else
 	if (CAN_checkAndClearRMP(CAN_MBOX_IN_IqRef)) {
 		gCanLastReceivedIqRef_stamp = gTimer0_stamp;
 	}
@@ -1426,7 +1534,8 @@ void checkErrors()
 
 	//*** Position Rollover (only check if enabled)
 	gErrors.bit.pos_rollover = gFlag_enablePosRolloverError && (
-			(STPOSCONV_getPositionRollOver(st_obj[HAL_MTR1].posConvHandle) != 0) ||
+			(STPOSCONV_getPositionRollOver(st_obj[HAL_MTR1].posConvHandle) != 0)
+			||
 			(STPOSCONV_getPositionRollOver(st_obj[HAL_MTR2].posConvHandle) != 0)
 			);
 }
