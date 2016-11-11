@@ -509,7 +509,8 @@ void main(void)
 			parkHandle[mtrNum] = PARK_init(
 			        &park[mtrNum], sizeof(park[mtrNum]));
 
-			// compute scaling factors for flux and torque calculations
+
+			//*** compute scaling factors
 
 			gTorque_Ls_Id_Iq_pu_to_Nm_sf[mtrNum] =
 			        USER_computeTorque_Ls_Id_Iq_pu_to_Nm_sf(
@@ -526,6 +527,7 @@ void main(void)
 
 			gCurrent_A_to_pu_sf[mtrNum] = _IQ(
 					1.0 / gUserParams[mtrNum].iqFullScaleCurrent_A);
+
 
 			// disable Rs recalculation
 			EST_setFlag_enableRsRecalc(estHandle[mtrNum], false);
@@ -849,8 +851,7 @@ interrupt void motor1_ISR(void)
 	// acknowledge the ADC interrupt
 	HAL_acqAdcInt(halHandle, ADC_IntNumber_1);
 
-	generic_motor_ISR(HAL_MTR1,
-	        _IQ(USER_MOTOR_RES_EST_CURRENT), _IQ(USER_MAX_VS_MAG_PU));
+	generic_motor_ISR(HAL_MTR1);
 
 	return;
 } // end of motor1_ISR() function
@@ -861,17 +862,13 @@ interrupt void motor2_ISR(void)
 	// acknowledge the ADC interrupt
 	HAL_acqAdcInt(halHandle, ADC_IntNumber_2);
 
-	generic_motor_ISR(HAL_MTR2,
-	        _IQ(USER_MOTOR_RES_EST_CURRENT_2), _IQ(USER_MAX_VS_MAG_PU_2));
+	generic_motor_ISR(HAL_MTR2);
 
 	return;
 } // end of motor2_ISR() function
 
 
-void generic_motor_ISR(
-        const HAL_MtrSelect_e mtrNum,
-        const _iq user_motor_res_est_current,
-        const _iq user_max_vs_mag_pu)
+void generic_motor_ISR(const HAL_MtrSelect_e mtrNum)
 {
     // Declaration of local variables
 	static _iq angle_pu[2] = {_IQ(0.0), _IQ(0.0)};
@@ -1000,7 +997,8 @@ void generic_motor_ISR(
 			speed_pu = _IQ(0.0);
 
 			// set D-axis current to Rs estimation current
-			gIdq_ref_pu[mtrNum].value[0] = _IQmpy(user_motor_res_est_current,
+			gIdq_ref_pu[mtrNum].value[0] = _IQmpy(
+					_IQ(gUserParams[mtrNum].maxCurrent_resEst),
 			        gCurrent_A_to_pu_sf[mtrNum]);
 			// set Q-axis current to 0
 			gIdq_ref_pu[mtrNum].value[1] = _IQ(0.0);
@@ -1051,7 +1049,9 @@ void generic_motor_ISR(
 		// controller executes first. The next instruction calculates the
 		// maximum limits for this voltage as:
 		// Vq_min_max = +/- sqrt(Vbus^2 - Vd^2)
-		outMax_pu = _IQsqrt(_IQmpy(user_max_vs_mag_pu, user_max_vs_mag_pu)
+		outMax_pu = _IQsqrt(
+				_IQ(gUserParams[mtrNum].maxVsMag_pu
+						* gUserParams[mtrNum].maxVsMag_pu)
 				- _IQmpy(gVdq_out_pu[mtrNum].value[0],
 						gVdq_out_pu[mtrNum].value[0]));
 

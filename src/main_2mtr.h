@@ -353,10 +353,7 @@ EST_Handle EST_init(void *pMemory, const size_t numBytes);
 
 
 //! \brief Motor ISR that can be used for both motors.
-void generic_motor_ISR(
-		const HAL_MtrSelect_e mtrNum,
-		const _iq user_motor_res_est_current,
-		const _iq user_max_vs_mag_pu);
+void generic_motor_ISR(const HAL_MtrSelect_e mtrNum);
 
 
 //! \brief Send the current status of the board via CAN
