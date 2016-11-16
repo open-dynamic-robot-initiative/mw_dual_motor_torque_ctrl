@@ -1331,7 +1331,7 @@ void updateGlobalVariables(const uint_least8_t mtrNum)
 			+ _IQmpy(gMotorVars[mtrNum].Iq_A, gMotorVars[mtrNum].Iq_A));
 
 	// get the torque estimate
-	gMotorVars[mtrNum].Torque_Nm = computeTorque_Nm(
+	gMotorVars[mtrNum].Torque_Nm = UTILS_computeTorque_Nm(
 			estHandle[mtrNum],
 			gIdq_pu[mtrNum],
 			gTorque_Flux_Iq_pu_to_Nm_sf[mtrNum],

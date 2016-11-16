@@ -74,11 +74,11 @@ void VIRTUALSPRING_run(VIRTUALSPRING_Handle vsHandle, _iq motorPosition_mrev)
     //spring->deflection = motorPosition_mrev
     //        - spring->encoderOffset
     //        + spring->equilibriumPosition;
-    spring->deflection = removePositionOffset(motorPosition_mrev,
+    spring->deflection = UTILS_removePositionOffset(motorPosition_mrev,
     		spring->encoderOffset,
 			spring->maxPosition_mrev);
     // this offset has to be added, so remove negative
-    spring->deflection = removePositionOffset(spring->deflection,
+    spring->deflection = UTILS_removePositionOffset(spring->deflection,
     		-spring->equilibriumPosition,
 			spring->maxPosition_mrev);
 
