@@ -281,28 +281,3 @@ void setupQepIndexInterrupt(HAL_Handle halHandle, HAL_Handle_mtr halHandleMtr[2]
 	CPU_enableInt(halObj->cpuHandle, CPU_IntNumber_5);
 }
 
-
-//! \brief Computes Torque in Nm
-//!
-//! This is a modified version of the function from user.c which does not need a
-//! CTRL_Handle.
-_iq computeTorque_Nm(EST_Handle estHandle, MATH_vec2 Idq_pu,
-		const _iq torque_Flux_sf, const _iq torque_Ls_sf)
-{
-  _iq Flux_pu = EST_getFlux_pu(estHandle);
-  _iq Id_pu = Idq_pu.value[0];
-  _iq Iq_pu = Idq_pu.value[1];
-  _iq Ld_minus_Lq_pu = _IQ30toIQ(
-		  EST_getLs_d_pu(estHandle) - EST_getLs_q_pu(estHandle));
-  _iq Torque_Flux_Iq_Nm = _IQmpy(
-		  _IQmpy(Flux_pu, Iq_pu),
-		  torque_Flux_sf);
-  _iq Torque_Ls_Id_Iq_Nm = _IQmpy(
-		  _IQmpy(
-				  _IQmpy(Ld_minus_Lq_pu, Id_pu),
-				  Iq_pu),
-		  torque_Ls_sf);
-  _iq Torque_Nm = Torque_Flux_Iq_Nm + Torque_Ls_Id_Iq_Nm;
-
-  return(Torque_Nm);
-} // end of USER_computeTorque_Nm() function

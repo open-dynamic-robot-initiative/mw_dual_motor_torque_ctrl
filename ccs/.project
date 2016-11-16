@@ -127,6 +127,11 @@
 			<locationURI>MW_INSTALL_DIR/sw/drivers/adc/src/32b/f28x/f2806x/adc.c</locationURI>
 		</link>
 		<link>
+			<name>amd_motorware_ext</name>
+			<type>2</type>
+			<location>/home/fwidmaierlocal/ws/blmc/amd_motorware_ext/src</location>
+		</link>
+		<link>
 			<name>angle_comp.c</name>
 			<type>1</type>
 			<locationURI>MW_INSTALL_DIR/sw/modules/angle_comp/src/32b/angle_comp.c</locationURI>

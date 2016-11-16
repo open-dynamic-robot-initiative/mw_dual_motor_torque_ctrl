@@ -49,13 +49,13 @@
 
 // system includes
 #include <math.h>
+#include <amd_motorware_ext/button.h>
+#include <amd_motorware_ext/utils.h>
 #include "main_2mtr.h"
 #include "main_helper.h"
-#include "utils.h"
 #include "virtualspring.h"
 #include "canapi.h"
 #include "spintac.h"
-#include "button.h"
 
 #ifdef FLASH
 #pragma CODE_SECTION(motor1_ISR, "ramfuncs");
