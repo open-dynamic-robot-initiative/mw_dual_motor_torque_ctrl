@@ -269,6 +269,10 @@
 	</linkedResources>
 	<variableList>
 		<variable>
+			<name>AMD_MW_EXT</name>
+			<value>$%7BPARENT-2-PROJECT_LOC%7D/amd_motorware_ext</value>
+		</variable>
+		<variable>
 			<name>MW_INSTALL_DIR</name>
 			<value>$%7BPARENT-2-PROJECT_LOC%7D/motorware</value>
 		</variable>
