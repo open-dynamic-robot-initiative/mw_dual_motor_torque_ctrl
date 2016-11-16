@@ -232,12 +232,6 @@ extern void HAL_overwriteSetupGpio(HAL_Handle halHandle)
 	GPIO_setDirection(hal->gpioHandle,
 			LED_EXTERN_YELLOW,
 			GPIO_Direction_Output);
-
-	//*** config pin as input for gFlag_resetZeroPositionOffset
-	GPIO_setHigh(hal->gpioHandle, GPIO_BUTTON);
-	GPIO_setDirection(hal->gpioHandle,
-			GPIO_BUTTON,
-			GPIO_Direction_Input);
 }
 
 

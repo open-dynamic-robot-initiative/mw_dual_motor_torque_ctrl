@@ -55,6 +55,7 @@
 #include "virtualspring.h"
 #include "canapi.h"
 #include "spintac.h"
+#include "button.h"
 
 #ifdef FLASH
 #pragma CODE_SECTION(motor1_ISR, "ramfuncs");
@@ -736,13 +737,10 @@ void main(void)
 
 
 			// Set the position reset flag via button on a GPIO
-			// Note that the pin is high by default and pulled to low when the
-			// button is pressed
-			//gFlag_resetZeroPositionOffset = GPIO_read(hal.gpioHandle,
-			//		BUTTON_RESET_POS_OFFSET) == LOW;
+			//gFlag_resetZeroPositionOffset = BUTTON_isPressed(hal.gpioHandle);
 			// We don't really need the position offset. Rather use the button
 			// as a soft emergency stop (i.e. disable system)
-			if (GPIO_read(hal.gpioHandle, GPIO_BUTTON) == LOW) {
+			if (BUTTON_isPressed(hal.gpioHandle)) {
 				gMotorVars[HAL_MTR1].Flag_enableSys = false;
 			}
 
