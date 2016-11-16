@@ -290,7 +290,7 @@ _iq gSpeed_pu_to_krpm_sf[2];
 //! \brief Scale factor to convert current from A to pu
 _iq gCurrent_A_to_pu_sf[2];
 
-//! Offset that is removed from the position before sending it via CAN.
+//! \brief Offset that is removed from the position before sending it via CAN.
 _iq gZeroPositionOffset[2] = {0, 0};
 
 //! \}
