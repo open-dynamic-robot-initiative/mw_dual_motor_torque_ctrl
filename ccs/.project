@@ -129,7 +129,7 @@
 		<link>
 			<name>amd_motorware_ext</name>
 			<type>2</type>
-			<location>/home/fwidmaierlocal/ws/blmc/amd_motorware_ext/src</location>
+			<locationURI>$%7BAMD_MW_EXT%7D/src</locationURI>
 		</link>
 		<link>
 			<name>angle_comp.c</name>
