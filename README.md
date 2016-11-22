@@ -1,8 +1,7 @@
 Dual Motor Torque Control
 =========================
 
-Control torque (or actually current) of two motors at once, using
-InstaSPIN/SpinTAC.
+Control torque (or actually current) of two motors at once, using MotorWare.
 
 This program can be used with the Universal Dual Motor GUI.
 
@@ -21,16 +20,16 @@ Requires MotorWare as well as the according user configuration files.  They can
 be found in the following repositories on git-amd:
 
   * motorware
-  * instaspin-user-config-f2806xM-drv8305 (rename to
-	"user_config_f28069m_drv8305" when cloning!)
+  * amd_motorware_ext
+  * user_config_f28069m_drv8305
 
-By default, it is expected that all three packages (this package, motorware and
-the config files) are in separate subdirectories of the same root directory.
-Example:
+By default, it is expected that all packages  are in separate subdirectories of
+the same root directory.  Example:
 
   ~/workspace/motorware
+  ~/workspace/amd_motorware_ext
   ~/workspace/user_config_f28069m_drv8305
-  ~/workspace/dual_motor_torque_ctrl
+  ~/workspace/mw_dual_motor_torque_ctrl
 
 In case you cannot follow this structure for some reason, you can modify the
 path variables $MW_INSTALL_DIR and $USER_CONFIG_DIR	in the project settings.
