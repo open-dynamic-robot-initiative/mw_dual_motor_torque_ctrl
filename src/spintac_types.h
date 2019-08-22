@@ -1,8 +1,3 @@
-/**
- * \brief Definitions of types used for the SpinTAC modules
- *
- * Move this to a separate file to avoid circular includes in the current setup.
- */
 /* --COPYRIGHT--,BSD
  * Copyright (c) 2012, LineStream Technologies Incorporated
  * Copyright (c) 2012, Texas Instruments Incorporated
@@ -19,7 +14,7 @@
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
  *
-* *  Neither the names of Texas Instruments Incorporated, LineStream
+ * *  Neither the names of Texas Instruments Incorporated, LineStream
  *    Technologies Incorporated, nor the names of its contributors may be
  *    used to endorse or promote products derived from this software without
  *    specific prior written permission.
@@ -36,6 +31,12 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * --/COPYRIGHT--*/
+
+/**
+ * \brief Definitions of types used for the SpinTAC modules
+ *
+ * Move this to a separate file to avoid circular includes in the current setup.
+ */
 
 #ifndef SRC_SPINTAC_TYPES_H_
 #define SRC_SPINTAC_TYPES_H_

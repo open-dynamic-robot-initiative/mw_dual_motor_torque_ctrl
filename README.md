@@ -43,3 +43,11 @@ This package is structured as follows:
 
   * src: Contains all the source code of this project
   * ccs: Contains the Code Composer Studio project files
+
+
+License
+-------
+
+BSD 3-Clause License
+
+Copyright (c) 2019, Max Planck Gesellschaft, New York University
