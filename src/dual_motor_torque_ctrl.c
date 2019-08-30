@@ -1,5 +1,6 @@
 // --COPYRIGHT--,BSD
 // Copyright (c) 2015, Texas Instruments Incorporated
+// Copyright (c) 2019, Max Planck Gesellschaft, New York University
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -29,10 +30,12 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 // EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // --/COPYRIGHT
-//! \file   solutions/instaspin_motion/src/proj_lab12c.c
+
+//! \file
 //! \brief Dual sensored speed control using SpinTAC
 //!
 //! (C) Copyright 2015, Texas Instruments, Inc.
+//! (C) Copyright 2019, Max Planck Gesellschaft, New York University
 
 //! \defgroup PROJ_LAB12C PROJ_LAB12C
 //@{

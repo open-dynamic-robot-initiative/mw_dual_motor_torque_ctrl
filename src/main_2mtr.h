@@ -2,6 +2,7 @@
 #define _MAIN_H_
 /* --COPYRIGHT--,BSD
  * Copyright (c) 2012, Texas Instruments Incorporated
+// Copyright (c) 2019, Max Planck Gesellschaft, New York University
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,11 +33,12 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * --/COPYRIGHT--*/
 
-//! \file   solutions/instaspin_foc/src/main.h
+//! \file
 //! \brief Defines the structures, global initialization, and functions used in
 //! \brief MAIN
 //!
 //! (C) Copyright 2011, Texas Instruments, Inc.
+//! (C) Copyright 2019, Max Planck Gesellschaft, New York University
 
 // **************************************************************************
 // the includes
