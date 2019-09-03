@@ -32,20 +32,38 @@
 // --/COPYRIGHT
 
 //! \file
-//! \brief Dual sensored speed control using SpinTAC
+//! \brief Dual motor torque control via CAN.
 //!
 //! (C) Copyright 2015, Texas Instruments, Inc.
 //! (C) Copyright 2019, Max Planck Gesellschaft, New York University
 
-//! \defgroup PROJ_LAB12C PROJ_LAB12C
-//@{
+/**
+ * \defgroup DUAL_MOTOR_TORQUE_CTRL Dual Motor Torque Controller
+ *
+ * \brief Torque controller for two motors using CAN communication.
+ *
+ * Uses CAN to receive current commands and to send position, velocity and
+ * current measurements.
+ *
+ *
+ * ## Disable CAN
+ *
+ * By default control commands are received via CAN.  To send commands from CCS
+ * via the debugger (e.g. using the GUI), set `gFlag_enableCan = false`.
+ *
+ *
+ * ## Virtual Spring Mode
+ *
+ * \note CAN needs to be disabled for this mode.
+ *
+ * To enable the "virtual spring" mode of motor `i`, set
+ * `gFlag_enableVirtualSpring[i] = true`.  In this mode the torque is set based
+ * on the deflection of the motor from its zero position, thus making it behave
+ * like a spring.
+ *
+ * @{
+ */
 
-//! \defgroup PROJ_LAB12C_OVERVIEW Project Overview
-//!
-//! Basic implementation of FOC by using the estimator for angle and speed
-//! feedback only.  Adds in SpinTAC Velocity Contol and SpinTAC Velocity Move
-//! Dual sensored speed control using SpinTAC
-//!
 
 // **************************************************************************
 // the includes
