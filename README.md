@@ -1,7 +1,9 @@
 Dual Motor Torque Control
 =========================
 
-Control torque (or actually current) of two motors at once, using MotorWare.
+Firmware for the [Open Robot Actuator Motor Boards](https://github.com/open-dynamic-robot-initiative/open_robot_actuator_hardware) using comunication via CAN.
+
+This firmware allows torque control of two motors at once using communication via CAN.  Use this firmware when you want to connect a TI LaunchPad evaluation board or a BLMC µDriver board via CAN.  If you want to communicate via Ethernet, using a Master Board, use [this firmware](https://github.com/open-dynamic-robot-initiative/udriver_firmware) instead.
 
 This program can be used with the Universal Dual Motor GUI.
 
