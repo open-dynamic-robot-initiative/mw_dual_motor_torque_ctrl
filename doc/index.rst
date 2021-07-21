@@ -7,6 +7,7 @@ Documentation of the ODRI Motor Board Firmware for CAN Communication
    :caption: Contents:
 
    build_instructions
+   can_interface
 
 
 This documentation describes the **mw_dual_motor_torque_ctrl** firmware for the
