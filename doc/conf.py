@@ -46,7 +46,8 @@ source_suffix = ".rst"
 master_doc = "index"
 
 # General information about the project.
-project = "ODRI Motor Board Firmware for CAN Communication"
+# project = "ODRI Motor Board Firmware for CAN Communication"
+project = "ODRI Firmware for CAN"
 copyright = "2021, Max Planck Gesellschaft"
 author = "Felix Widmaier"
 

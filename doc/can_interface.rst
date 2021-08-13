@@ -1,5 +1,5 @@
-Communication Protocol
-======================
+CAN Communication Protocol
+==========================
 
 Each frame has an 11-bit identifier, which is used to distinguish different
 types of messages. In the following the protocol (which identifier is used for

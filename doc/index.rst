@@ -3,14 +3,14 @@ Documentation of the ODRI Motor Board Firmware for CAN Communication
 ********************************************************************
 
 .. toctree::
+   :hidden:
    :maxdepth: 1
-   :caption: Contents:
 
-   build_instructions
-   can_interface
+   Build & Flash <build_instructions>
+   CAN Protocol <can_interface>
 
 
-This documentation describes the **mw_dual_motor_torque_ctrl** firmware for the
+This documentation describes the mw_dual_motor_torque_ctrl_ firmware for the
 `Open Robot Actuator Motor Boards`_ using comunication via CAN.
 
 This firmware allows torque control of two motors at once using communication
@@ -28,24 +28,6 @@ This project is configured for use with the LAUNCHXL-F28069M microcontroller
 board and two DRV8305 booster packs.
 
 
-
-Structure of this Package
-=========================
-
-This package is structured as follows:
-
-  * src: Contains all the source code of this project
-  * ccs: Contains the Code Composer Studio project files
-
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-
-
+.. _mw_dual_motor_torque_ctrl: https://github.com/open-dynamic-robot-initiative/mw_dual_motor_torque_ctrl
 .. _Open Robot Actuator Motor Boards: https://github.com/open-dynamic-robot-initiative/open_robot_actuator_hardware
 .. _udriver_firmware: https://github.com/open-dynamic-robot-initiative/udriver_firmware
