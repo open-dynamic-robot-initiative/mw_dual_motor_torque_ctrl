@@ -1,6 +1,6 @@
-********************************************************************
-Documentation of the ODRI Motor Board Firmware for CAN Communication
-********************************************************************
+***********************************************
+ODRI Motor Board Firmware for CAN Communication
+***********************************************
 
 .. toctree::
    :hidden:
