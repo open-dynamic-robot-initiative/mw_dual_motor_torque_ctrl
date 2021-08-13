@@ -1,0 +1,220 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>How to Build and Flash the Firmware &#8212; ODRI Firmware for CAN 1.0.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="CAN Communication Protocol" href="can_interface.html" />
+    <link rel="prev" title="Documentation of the ODRI Motor Board Firmware for CAN Communication" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="how-to-build-and-flash-the-firmware">
+<h1>How to Build and Flash the Firmware<a class="headerlink" href="#how-to-build-and-flash-the-firmware" title="Permalink to this headline">¶</a></h1>
+<section id="requirements-and-paths">
+<h2>Requirements and Paths<a class="headerlink" href="#requirements-and-paths" title="Permalink to this headline">¶</a></h2>
+<p>Requires the following additional repositories:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/open-dynamic-robot-initiative/amd_motorware_ext">amd_motorware_ext</a></p></li>
+<li><p><a class="reference external" href="https://github.com/open-dynamic-robot-initiative/user_config_f28069m_drv8305">user_config_f28069m_drv8305</a></p></li>
+</ul>
+<p>Further Texas Instrument’s <a class="reference external" href="https://www.ti.com/tool/MOTORWARE">MotorWare</a> library is needed.  There are
+modifications that have to be made to the original MotorWare in order to build
+this project.  See the instructions on how to apply them, see the README of
+<a class="reference external" href="https://github.com/open-dynamic-robot-initiative/amd_motorware_ext">amd_motorware_ext</a>.</p>
+<p>By default, it is expected that all packages are in separate subdirectories of
+the same root directory.  So your workspace structure should look like this:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>workspace
+├── amd_motorware_ext
+├── mw_dual_motor_torque_ctrl
+├── motorware
+└── user_config_f28069m_drv8305
+</pre></div>
+</div>
+<p>In case you cannot follow this structure for some reason, you can modify the
+path variables <code class="docutils literal notranslate"><span class="pre">$MW_INSTALL_DIR</span></code> and <code class="docutils literal notranslate"><span class="pre">$USER_CONFIG_DIR</span></code> in the project settings
+of <code class="docutils literal notranslate"><span class="pre">mw_dual_motor_torque_ctrl</span></code>.</p>
+<section id="code-composer-studio">
+<h3>Code Composer Studio<a class="headerlink" href="#code-composer-studio" title="Permalink to this headline">¶</a></h3>
+<p>To build the firmware and to flash it to the boards, you need Texas Instruments’
+<a class="reference external" href="http://www.ti.com/tool/ccstudio">Code Composer Studio</a> (CCS).  These instructions are tested with version
+9.1.0 but other versions may work as well.</p>
+<p>When installing it, make sure the following components are selected:</p>
+<ul class="simple">
+<li><p><strong>Processor Support</strong>: C2000 32-bit Real-time MCUs</p></li>
+<li><p><strong>Debug Probes</strong>: TI XDS</p></li>
+</ul>
+<p>When starting CCS for the first time, you have to specify a workspace location.
+Note that this “CCS workspace” is just where CCS stores its configuration and is
+not related to the workspace directory that is described above (i.e. the CCS
+workspace doesn’t need to be in this directory).</p>
+</section>
+</section>
+<section id="build-instructions">
+<h2>Build Instructions<a class="headerlink" href="#build-instructions" title="Permalink to this headline">¶</a></h2>
+<section id="import-in-code-composer-studio">
+<h3>Import in Code Composer Studio<a class="headerlink" href="#import-in-code-composer-studio" title="Permalink to this headline">¶</a></h3>
+<p>Start Code Composer Studio and import the <code class="docutils literal notranslate"><span class="pre">mw_dual_motor_torque_ctrl</span></code> project
+via the menu</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Project</span> <span class="o">&gt;</span> <span class="n">Import</span> <span class="n">CCS</span> <span class="n">Projects</span><span class="o">...</span>
+</pre></div>
+</div>
+<p>In the import dialogue, set the search-directory to the one of the
+<code class="docutils literal notranslate"><span class="pre">mw_dual_motor_torque_ctrl</span></code> package.The Discovered projects pane should then
+show <code class="docutils literal notranslate"><span class="pre">dual_motor_torque_ctrl</span></code>.</p>
+<p><strong>Make sure the “Copy projects into workspace” option is *not* set.</strong></p>
+<p>After importing, the project should show up in the <em>Project Explorer</em>.</p>
+</section>
+<section id="build-and-run-in-debug-mode">
+<h3>Build and Run in Debug Mode<a class="headerlink" href="#build-and-run-in-debug-mode" title="Permalink to this headline">¶</a></h3>
+<p>You can run the firmware in debug mode while the board is connected to the
+computer via USB.  This is mostly useful for development.</p>
+<p>Note: When using a TI LaunchPad board, make sure the boot switches are set such
+that jTag is enabled (see [below](#launchpad-boot-switches)).</p>
+<ol class="arabic simple">
+<li><p>Compile your code, using the “Release” build.</p></li>
+<li><p>Make sure the board is powered and connected via USB to the PC. All three
+boot switche have to be in the upper position (see below).</p></li>
+<li><p>Start the Debugger by clicking on the bug icon in the tool bar: <img alt="CCS debug button" src="_images/ccs_button_debug.png" /></p></li>
+<li><p>Enable Silicon Real-time Mode by clicking the corresponding button in the
+tool bar: <img alt="CCS realtime mode button" src="_images/ccs_button_silicon_realtime_mode.png" /></p></li>
+<li><p>Run the code by pressing the Resume button: <img alt="CCS resume button" src="_images/ccs_button_resume.png" />
+Now you can use a GUIComposer GUI or modify variables on the board via the
+<em>Expressions View</em>.</p></li>
+<li><p>To quit the debugger, press the Terminate button: <img alt="CCS terminate button" src="_images/ccs_button_terminate.png" />
+Note: This will only detach the debugger, it will not stop the program on the
+board!</p></li>
+</ol>
+<p>With this procedure, the program is not permanently stored on the board. That
+means all steps have to be repeated, everytime the board is restarted.</p>
+</section>
+<section id="build-and-write-to-flash">
+<h3>Build and Write to Flash<a class="headerlink" href="#build-and-write-to-flash" title="Permalink to this headline">¶</a></h3>
+<p>To have the program written to flash rather than RAM (so that it is permanently
+stored on the board), simply switch the build type from “Release” to “Flash”.</p>
+<p>Now compile and write the program to the board by running the debugger (same
+procedure like described above, only use “Flash” instead of “Release” build).
+You can use the debugger to run and monitor the program just like before.</p>
+<p>Note that when using the TI LaunchPad, you have to set the boot switches on the
+board to the right configuration so that the firmware is automatically loaded
+from flash when restarting the board (see next section).</p>
+</section>
+<section id="launchpad-boot-switches">
+<h3>LaunchPad Boot Switches<a class="headerlink" href="#launchpad-boot-switches" title="Permalink to this headline">¶</a></h3>
+<p><em>This only applies to the TI LaunchPad board.</em></p>
+<p>After the program is written to the flash memory with the steps described above,
+the boot settings have to be changed to tell the board to run the code in the
+flash rather than using the USB connection.</p>
+<p>Change the switches on the board (hidden under the J1 BoosterPack…) to 1: Up,
+2: Up, 3: Down.</p>
+<p>Now the board should automatically run the program from flash when powered. Note
+that connection via USB is not possible in this configuration (i.e. to use the
+debugger or update the program you have to set the switches back to Up/Up/Up
+again).</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 51%" />
+<col style="width: 49%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>Run firmware from flash</p></td>
+<td><p>Use jTag (to debug via USB)</p></td>
+</tr>
+<tr class="row-even"><td><img alt="LaunchPad boot switch configuration ON - ON - OFF" src="_images/launchpad_bootswitches_boot_from_flash.png" />
+</td>
+<td><img alt="LaunchPad boot switch configuration ON - ON - ON" src="_images/launchpad_bootswitches_use_jtag.png" />
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">ODRI Firmware for CAN</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Build &amp; Flash</a></li>
+<li class="toctree-l1"><a class="reference internal" href="can_interface.html">CAN Protocol</a></li>
+<li class="toctree-l1"><a class="reference internal" href="led_codes.html">LED Blink Codes</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">Documentation of the ODRI Motor Board Firmware for CAN Communication</a></li>
+      <li>Next: <a href="can_interface.html" title="next chapter">CAN Communication Protocol</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2021, Max Planck Gesellschaft.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.1.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/build_instructions.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

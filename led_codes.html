@@ -1,0 +1,155 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>LED Blink Codes &#8212; ODRI Firmware for CAN 1.0.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="CAN Communication Protocol" href="can_interface.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="led-blink-codes">
+<h1>LED Blink Codes<a class="headerlink" href="#led-blink-codes" title="Permalink to this headline">¶</a></h1>
+<p>The LaunchPad itself has two usable LEDs (red and blue), however, they can be
+hidden below the J1 BoosterPack.  Therefore we are using three additional LEDs
+(red, yellow, green) that can be connected to the GPIOs 12 (red), 13 (yellow)
+and 22 (green) and the 3.3V pin:</p>
+<img alt="Image of the LaunchPad showing the GPIO pins used for the LEDs." src="_images/launchxl-f28069m_extern_led_pins.png" />
+<p>The red LED is synchronized with the red on-board LED, the green LED is
+synchronized with the blue on-board LED.</p>
+<p>The three external LEDs are used to visualize some important states of
+the board:</p>
+<section id="green-or-blue-led">
+<h2>Green (or Blue) LED<a class="headerlink" href="#green-or-blue-led" title="Permalink to this headline">¶</a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 28%" />
+<col style="width: 73%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>Off</p></td>
+<td><p>System is disabled.</p></td>
+</tr>
+<tr class="row-even"><td><p>On</p></td>
+<td><p>System is enabled. Both motors are disabled.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Slow Blinking (1 Hz)</p></td>
+<td><p>System and at least one motor are enabled.</p></td>
+</tr>
+<tr class="row-even"><td><p>Fast Blinking (4 Hz)</p></td>
+<td><p>Same as above + at least one motor is currently aligned.</p></td>
+</tr>
+</tbody>
+</table>
+<p>While the motors are aligned with the encoders, they are not yet ready to be
+used. The motor position is locked (do not move manually!) and current commands
+are ignored. Alignment is automatically started when motors are enabled for the
+first time and it takes 5 seconds.</p>
+</section>
+<section id="yellow-led">
+<h2>Yellow LED<a class="headerlink" href="#yellow-led" title="Permalink to this headline">¶</a></h2>
+<p>The yellow LED indicates that CAN messages sent by the board are not
+acknowledged by any receiver.</p>
+<p>This means that there is a problem with the CAN connection (e.g. cable not
+plugged in, driver not loaded, etc.).  Depending on the CAN driver on the
+computer, it may also only mean that currently no program is running that is
+processing the messages (i.e. when using PCAN-USB on Windows).</p>
+<p>The LED is turned off as soon as a message is acknowledged and will be turned
+on again when sending of a message fails.  So if the yellow LED is blinking
+this indicates an unstable CAN connection.</p>
+</section>
+<section id="red-led">
+<h2>Red LED<a class="headerlink" href="#red-led" title="Permalink to this headline">¶</a></h2>
+<p>Some error occured.  More descriptive error code should be sent in the CAN
+status messages.</p>
+<p>Note that an error usually disables the system and prevents it from being
+re-enabled until the error is resolved.</p>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">ODRI Firmware for CAN</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="build_instructions.html">Build &amp; Flash</a></li>
+<li class="toctree-l1"><a class="reference internal" href="can_interface.html">CAN Protocol</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">LED Blink Codes</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="can_interface.html" title="previous chapter">CAN Communication Protocol</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2021, Max Planck Gesellschaft.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.1.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/led_codes.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
