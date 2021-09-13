@@ -1,0 +1,222 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Connecting via CAN &#8212; ODRI Firmware for CAN 1.0.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="CAN Communication Protocol" href="can_interface.html" />
+    <link rel="prev" title="How to Build and Flash the Firmware" href="build_instructions.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="connecting-via-can">
+<h1>Connecting via CAN<a class="headerlink" href="#connecting-via-can" title="Permalink to this headline">¶</a></h1>
+<section id="hardware">
+<h2>Hardware<a class="headerlink" href="#hardware" title="Permalink to this headline">¶</a></h2>
+<p>The motor board for which this firmware is written supports the CAN 2.0B
+standard.
+In theory any CAN device following the standard should be able to communicate
+with the board.  In practice we are successfully using <strong>“PCAN-PCI Express”</strong>
+dual-channel cards for classic CAN by PEAK System.  However, we are having
+problems with PEAK’s <strong>CAN FD</strong> devices, so we recommend to stick with the
+“non-FD” devices for now.  We have not tested with hardware of other
+manufacturers, so we cannot say anything about those.</p>
+</section>
+<section id="linux-drivers">
+<h2>Linux Drivers<a class="headerlink" href="#linux-drivers" title="Permalink to this headline">¶</a></h2>
+<p>For the PEAK devices, SocketCAN drivers are already included in the standard
+Linux kernel, so there is no need to manually install any driver.
+In the following, it is assumed that SocketCAN is used.</p>
+</section>
+<section id="connection-setup">
+<h2>Connection Setup<a class="headerlink" href="#connection-setup" title="Permalink to this headline">¶</a></h2>
+<p>When using SocketCAN, there is an interface for each available channel, called
+“can0”, “can1”, “can2”, …</p>
+<p>Each interface has to be configured and enabled in order to be usable.  This
+firmware uses 1 Mbit/s and a sample point at 86.7%.  To configure the interface
+accordingly, run</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo ip link <span class="nb">set</span> can0 <span class="nb">type</span> can bitrate <span class="m">1000000</span> sample-point <span class="m">0</span>.867
+</pre></div>
+</div>
+<p>and to enable it run</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo ip link <span class="nb">set</span> up can0
+</pre></div>
+</div>
+<p>This has to be done for each interface that you want to use (replace “can0”
+accordingly).</p>
+<section id="determine-names-of-interfaces">
+<h3>Determine Names of Interfaces<a class="headerlink" href="#determine-names-of-interfaces" title="Permalink to this headline">¶</a></h3>
+<p>The names are assigned automatically to the interfaces and the order may not
+seem logical from outside.  So you first need to find out which physical port
+“can0”, “can1”, etc. correspond to.</p>
+<p>There may be nicer ways to do this but the following precedure works well for
+us:</p>
+<ol class="arabic">
+<li><p>Disconnect any devices from the CAN ports.</p></li>
+<li><p>Configure and enable all interfaces as described above.</p></li>
+<li><p>Open a terminal and run <cite>watch netstat -i</cite>.  It should show an output like
+this:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Kernel</span> <span class="n">Interface</span> <span class="n">table</span>
+<span class="n">Iface</span>   <span class="n">MTU</span> <span class="n">Met</span>   <span class="n">RX</span><span class="o">-</span><span class="n">OK</span> <span class="n">RX</span><span class="o">-</span><span class="n">ERR</span> <span class="n">RX</span><span class="o">-</span><span class="n">DRP</span> <span class="n">RX</span><span class="o">-</span><span class="n">OVR</span>    <span class="n">TX</span><span class="o">-</span><span class="n">OK</span> <span class="n">TX</span><span class="o">-</span><span class="n">ERR</span> <span class="n">TX</span><span class="o">-</span><span class="n">DRP</span> <span class="n">TX</span><span class="o">-</span><span class="n">OVR</span> <span class="n">Flg</span>
+<span class="n">can0</span>         <span class="mi">16</span> <span class="mi">0</span>         <span class="mi">0</span>      <span class="mi">0</span>      <span class="mi">0</span> <span class="mi">0</span>             <span class="mi">0</span>      <span class="mi">0</span>      <span class="mi">0</span>      <span class="mi">0</span> <span class="n">ORU</span>
+<span class="n">can1</span>         <span class="mi">16</span> <span class="mi">0</span>         <span class="mi">0</span>      <span class="mi">0</span>      <span class="mi">0</span> <span class="mi">0</span>             <span class="mi">0</span>      <span class="mi">0</span>      <span class="mi">0</span>      <span class="mi">0</span> <span class="n">ORU</span>
+<span class="n">can2</span>         <span class="mi">16</span> <span class="mi">0</span>         <span class="mi">0</span>      <span class="mi">0</span>      <span class="mi">0</span> <span class="mi">0</span>             <span class="mi">0</span>      <span class="mi">0</span>      <span class="mi">0</span>      <span class="mi">0</span> <span class="n">ORU</span>
+<span class="o">...</span>
+</pre></div>
+</div>
+</li>
+<li><p>Use a motor board that has been flashed (or any other CAN device that sends
+messages), power it on and connect it to the first CAN port and watch the
+output in the terminal.  For one of the listed interfaces, the RX-OK value
+should start increasing.  This is the interface you are currently connected
+to.</p></li>
+<li><p>Disconnect the board and connect it to the next port, repeat until all ports
+are identified.  You may want to put labels on them.</p></li>
+</ol>
+<p>Note: As long as the hardware configuration of the computer is not changed, the
+interface to port mapping should be fixed.  However, when adding more CAN cards
+or removing some of the existing ones, the order of the others may change.  In
+this case, the identification procedure needs to be repeated.</p>
+</section>
+</section>
+<section id="testing-the-connection">
+<h2>Testing the Connection<a class="headerlink" href="#testing-the-connection" title="Permalink to this headline">¶</a></h2>
+<p>For a first basic test if the CAN communication is working, the console
+applications <code class="docutils literal notranslate"><span class="pre">candump</span></code> and <code class="docutils literal notranslate"><span class="pre">cansend</span></code> can be used.  On Ubuntu, they can be
+installed via the <code class="docutils literal notranslate"><span class="pre">can-utils</span></code> package.</p>
+<p>In the following it is assumed that interface “can0” is used.  Adjust the
+commands accordingly when using a different interface.</p>
+<ol class="arabic">
+<li><p>Connect the motor board via CAN to the computer and power it on.</p></li>
+<li><p>Open a terminal and run</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>candump -e can0
+</pre></div>
+</div>
+<p>It should display a message with ID 010 once every second (the status message
+that is send by the board).  If you don’t see this message, something is
+wrong!</p>
+</li>
+<li><p>If you see the status messages, you can proceed by sending the commands to
+enable the motors.  Open a separate terminal (keep the <code class="docutils literal notranslate"><span class="pre">candump</span></code> running!)
+and execute the following commands in this order:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cansend can0 <span class="m">005</span><span class="c1">#0000000000000000  # set target current to zero</span>
+cansend can0 <span class="m">000</span><span class="c1">#000000000000001E  # disable CAN receive timeout</span>
+cansend can0 <span class="m">000</span><span class="c1">#0000000100000001  # enable the system</span>
+cansend can0 <span class="m">000</span><span class="c1">#0000000100000014  # enable sending measurements</span>
+cansend can0 <span class="m">000</span><span class="c1">#0000000100000002  # enable motor 1</span>
+cansend can0 <span class="m">000</span><span class="c1">#0000000100000003  # enable motor 2</span>
+</pre></div>
+</div>
+<p>After the the command to enable sending measurements, the output of
+<code class="docutils literal notranslate"><span class="pre">candump</span></code> should start sending messages with IDs 020, 030, 040 and 050 at
+high frequency.</p>
+<p>When enabling a motor the corresponding motor should jitter a bit and then be
+held in place for a few seconds (assuming there actually is a motor
+connected).  This is an initial calibration procedure that is automatically
+performed when the motor is enabled for the first time after power up.</p>
+</li>
+</ol>
+<p>If everything behaves as described, this means that the CAN communication is
+generally working.  As an additional test, you may want to check if the
+communication rate is stable.  For this, keep the board on after step 3 and run
+the following command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>candump -t d can0,040:FFF
+</pre></div>
+</div>
+<p>This will print only messages with ID 040.  The first value in each row is the
+time passed between the current message and the previous one.  This value should
+be close to 0.001 (= 1 ms) with only little deviation.  If you see larger
+deviations here, this means some messages are delayed, indicating an instable
+connection.  Whether this is a problem depends on the application but in general
+delays mean that the controller will be less stable.</p>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">ODRI Firmware for CAN</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="build_instructions.html">Build &amp; Flash</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Connecting via CAN</a></li>
+<li class="toctree-l1"><a class="reference internal" href="can_interface.html">CAN Protocol</a></li>
+<li class="toctree-l1"><a class="reference internal" href="led_codes.html">LED Blink Codes</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="build_instructions.html" title="previous chapter">How to Build and Flash the Firmware</a></li>
+      <li>Next: <a href="can_interface.html" title="next chapter">CAN Communication Protocol</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2021, Max Planck Gesellschaft.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.2.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/can_connection.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

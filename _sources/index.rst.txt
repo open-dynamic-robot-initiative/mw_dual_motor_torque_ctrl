@@ -7,6 +7,7 @@ ODRI Motor Board Firmware for CAN Communication
    :maxdepth: 1
 
    Build & Flash <build_instructions>
+   can_connection
    CAN Protocol <can_interface>
    led_codes
 
