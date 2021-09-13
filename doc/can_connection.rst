@@ -125,7 +125,8 @@ commands accordingly when using a different interface.
    When enabling a motor the corresponding motor should jitter a bit and then be
    held in place for a few seconds (assuming there actually is a motor
    connected).  This is an initial calibration procedure that is automatically
-   performed when the motor is enabled for the first time after power up.
+   performed when the motor is enabled for the first time after power up, see
+   :doc:`motor_alignment`.
 
 If everything behaves as described, this means that the CAN communication is
 generally working.  As an additional test, you may want to check if the

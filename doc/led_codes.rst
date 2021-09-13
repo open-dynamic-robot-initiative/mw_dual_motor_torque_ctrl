@@ -33,7 +33,8 @@ Green (or Blue) LED
 While the motors are aligned with the encoders, they are not yet ready to be
 used. The motor position is locked (do not move manually!) and current commands
 are ignored. Alignment is automatically started when motors are enabled for the
-first time and it takes 5 seconds.
+first time and it takes a few seconds.  See :doc:`motor_alignment` for more
+information.
 
 
 Yellow LED
