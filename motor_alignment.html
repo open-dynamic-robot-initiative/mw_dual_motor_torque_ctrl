@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>ODRI Motor Board Firmware for CAN Communication &#8212; ODRI Firmware for CAN 1.0.0 documentation</title>
+    <title>Motor Alignment Calibration &#8212; ODRI Firmware for CAN 1.0.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
     <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
@@ -15,7 +15,7 @@
     <script src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="How to Build and Flash the Firmware" href="build_instructions.html" />
+    <link rel="prev" title="LED Blink Codes" href="led_codes.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -32,22 +32,22 @@
 
           <div class="body" role="main">
             
-  <section id="odri-motor-board-firmware-for-can-communication">
-<h1>ODRI Motor Board Firmware for CAN Communication<a class="headerlink" href="#odri-motor-board-firmware-for-can-communication" title="Permalink to this headline">¶</a></h1>
-<div class="toctree-wrapper compound">
-</div>
-<p>This documentation describes the <a class="reference external" href="https://github.com/open-dynamic-robot-initiative/mw_dual_motor_torque_ctrl">mw_dual_motor_torque_ctrl</a> firmware for the
-<a class="reference external" href="https://github.com/open-dynamic-robot-initiative/open_robot_actuator_hardware">Open Robot Actuator Motor Boards</a> using comunication via CAN.</p>
-<p>This firmware allows torque control of two motors at once using communication
-via CAN.  Use this firmware when you want to connect a TI LaunchPad evaluation
-board or a BLMC µDriver board via CAN.  If you want to communicate via Ethernet,
-using a Master Board, use the <a class="reference external" href="https://github.com/open-dynamic-robot-initiative/udriver_firmware">udriver_firmware</a> instead.</p>
-<p>This program can be used with the Universal Dual Motor GUI.</p>
-<section id="hardware">
-<h2>Hardware<a class="headerlink" href="#hardware" title="Permalink to this headline">¶</a></h2>
-<p>This project is configured for use with the LAUNCHXL-F28069M microcontroller
-board and two DRV8305 booster packs.</p>
-</section>
+  <section id="motor-alignment-calibration">
+<h1>Motor Alignment Calibration<a class="headerlink" href="#motor-alignment-calibration" title="Permalink to this headline">¶</a></h1>
+<p>When enabling a motor for the first time after powering the board, an alignment
+calibration is automatically started to find the offset between encoder and
+rotor.  This is needed for accurate field oriented control.</p>
+<p>At the beginning of this process, the motor may move a little bit and will then
+be held in place for a few seconds.  To achieve the best possible accuracy, make
+sure the motors are not blocked (e.g. because they are pushing against an
+obstacle) and avoid any external torque on the motor, e.g. move the robot into a
+position where gravitational pull on the joints is minimal before starting the
+system.  Also do not manually move the motors while the calibration is running.</p>
+<p><strong>What happens when the calibration is inaccurate?</strong></p>
+<p>The better the calibration, the higher the efficiency of the motor.  So with an
+inaccurate calibration (assuming it is not completely off) it is still
+possible to control the motor but a higher current needs to be applied to
+achieve the same torque.</p>
 </section>
 
 
@@ -57,7 +57,7 @@ board and two DRV8305 booster packs.</p>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-<h1 class="logo"><a href="#">ODRI Firmware for CAN</a></h1>
+<h1 class="logo"><a href="index.html">ODRI Firmware for CAN</a></h1>
 
 
 
@@ -67,19 +67,19 @@ board and two DRV8305 booster packs.</p>
 
 
 <h3>Navigation</h3>
-<ul>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="build_instructions.html">Build &amp; Flash</a></li>
 <li class="toctree-l1"><a class="reference internal" href="can_connection.html">Connecting via CAN</a></li>
 <li class="toctree-l1"><a class="reference internal" href="can_interface.html">CAN Protocol</a></li>
 <li class="toctree-l1"><a class="reference internal" href="led_codes.html">LED Blink Codes</a></li>
-<li class="toctree-l1"><a class="reference internal" href="motor_alignment.html">Motor Alignment Calibration</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Motor Alignment Calibration</a></li>
 </ul>
 
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
-  <li><a href="#">Documentation overview</a><ul>
-      <li>Next: <a href="build_instructions.html" title="next chapter">How to Build and Flash the Firmware</a></li>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="led_codes.html" title="previous chapter">LED Blink Codes</a></li>
   </ul></li>
 </ul>
 </div>
@@ -105,7 +105,7 @@ board and two DRV8305 booster packs.</p>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
-      <a href="_sources/index.rst.txt"
+      <a href="_sources/motor_alignment.rst.txt"
           rel="nofollow">Page source</a>
     </div>
 
