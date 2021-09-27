@@ -1,0 +1,3 @@
+[submodule "udriver_motor_config"]
+	path = udriver_motor_config
+	url = git@github.com:open-dynamic-robot-initiative/user_config_f28069m_drv8305.git
