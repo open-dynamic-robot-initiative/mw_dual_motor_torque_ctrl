@@ -1,0 +1,309 @@
+diff --git a/.gitignore b/.gitignore
+new file mode 100644
+index 0000000..2fbfed9
+--- /dev/null
++++ b/.gitignore
+@@ -0,0 +1,5 @@
++Release
++Flash
++.launches
++.settings
++*~
+diff --git a/sw/ide/ccs/cmd/f2806x/f28062F_ram_lnk.cmd b/sw/ide/ccs/cmd/f2806x/F28062F_ram_lnk.cmd
+similarity index 100%
+rename from sw/ide/ccs/cmd/f2806x/f28062F_ram_lnk.cmd
+rename to sw/ide/ccs/cmd/f2806x/F28062F_ram_lnk.cmd
+diff --git a/sw/ide/ccs/cmd/f2806x/f28069F_ram_lnk.cmd b/sw/ide/ccs/cmd/f2806x/F28069F_ram_lnk.cmd
+similarity index 100%
+rename from sw/ide/ccs/cmd/f2806x/f28069F_ram_lnk.cmd
+rename to sw/ide/ccs/cmd/f2806x/F28069F_ram_lnk.cmd
+diff --git a/sw/ide/ccs/cmd/f2806x/f28069M_ram_lnk.cmd b/sw/ide/ccs/cmd/f2806x/F28069M_ram_lnk.cmd
+similarity index 100%
+rename from sw/ide/ccs/cmd/f2806x/f28069M_ram_lnk.cmd
+rename to sw/ide/ccs/cmd/f2806x/F28069M_ram_lnk.cmd
+diff --git a/sw/modules/enc/src/32b/enc.c b/sw/modules/enc/src/32b/enc.c
+index 10a45ea..cb8b6dc 100644
+--- a/sw/modules/enc/src/32b/enc.c
++++ b/sw/modules/enc/src/32b/enc.c
+@@ -68 +68 @@ ENC_Handle ENC_init(void *pMemory,const size_t numBytes)
+-void ENC_setup(ENC_Handle encHandle, const int16_t sample_period, const uint16_t num_pole_pairs, const uint16_t num_enc_slots, const uint32_t enc_zero_offset, const float_t full_scale_freq, const float_t speed_update_freq, const float_t speed_cutoff)
++void ENC_setup(ENC_Handle encHandle, const int16_t sample_period, const uint16_t num_pole_pairs, const uint32_t num_enc_slots, const uint32_t enc_zero_offset, const float_t full_scale_freq, const float_t speed_update_freq, const float_t speed_cutoff)
+diff --git a/sw/modules/enc/src/32b/enc.h b/sw/modules/enc/src/32b/enc.h
+index 284ae02..d9a4cba 100644
+--- a/sw/modules/enc/src/32b/enc.h
++++ b/sw/modules/enc/src/32b/enc.h
+@@ -91 +91 @@ typedef struct _ENC_Obj_
+-  uint16_t num_enc_slots;		//!< number of encoder slots
++  uint32_t num_enc_slots;		//!< number of encoder slots
+@@ -233 +233 @@ extern void ENC_setup(ENC_Handle encHandle, const int16_t sample_period,
+-                      const uint16_t num_pole_pairs, const uint16_t num_enc_slots, 
++                      const uint16_t num_pole_pairs, const uint32_t num_enc_slots,
+diff --git a/sw/modules/hal/boards/boostxldrv8305_revA/f28x/f2806x/src/hal_2mtr.c b/sw/modules/hal/boards/boostxldrv8305_revA/f28x/f2806x/src/hal_2mtr.c
+index 48c3831..815f034 100644
+--- a/sw/modules/hal/boards/boostxldrv8305_revA/f28x/f2806x/src/hal_2mtr.c
++++ b/sw/modules/hal/boards/boostxldrv8305_revA/f28x/f2806x/src/hal_2mtr.c
+@@ -925 +925 @@ void HAL_setupAdcs(HAL_Handle handle)
+-  ADC_setIntSrc(obj->adcHandle,ADC_IntNumber_2,ADC_IntSrc_EOC14);
++  ADC_setIntSrc(obj->adcHandle,ADC_IntNumber_2,ADC_IntSrc_EOC15);
+@@ -929,0 +930,25 @@ void HAL_setupAdcs(HAL_Handle handle)
++
++  // About ADC Initial Conversion bug
++  // --------------------------------
++  //
++  // From the Silicon Errata of the TMS320F28069 (SPRZ342K):
++  // "When the ADC conversions are initiated by any source of trigger in either
++  // sequential or simultaneous sampling mode, the first sample may not be the
++  // correct conversion result."
++  //
++  // The proposed workaround is to sample the first channel twice and only use
++  // the second result (i.e. never look at the result of the first conversion).
++  // This, however, wastes one of the SOC numbers, i.e. using all 16 ADC
++  // channels gets difficult.
++  // The expected error for the first sample, according to the errata, is <= 4
++  // LSB (least significant bits).  On the range of -1 to +1, this corresponds
++  // to an error of <= 0.002.
++  // For many possible applications of the remaining ADCs A6 and B6 (e.g.
++  // hardware slider, temparature sensor, ...) this error is small enough to be
++  // tolerable.  Therefore we simply use the first (erroneous) conversion of the
++  // two sequences for these inputs and use them, despite being not 100%
++  // correct.  By doing so, we avoid errors in the critical phase current
++  // conversions while still being able to use all 16 channels without ugly
++  // hacks.
++
++
+@@ -931,2 +956,5 @@ void HAL_setupAdcs(HAL_Handle handle)
+-  // EXT IA-FB
+-  ADC_setSocChanNumber(obj->adcHandle,ADC_SocNumber_0,ADC_SocChanNumber_A0);
++
++  // Sensor on ADCINA6 (e.g. potentiometer).
++  // Note: this is affected by ADC Initial Conversion bug (SPRZ342) which leads
++  // to an error of typically <= 0.002
++  ADC_setSocChanNumber(obj->adcHandle,ADC_SocNumber_0,ADC_SocChanNumber_A6);
+@@ -937 +964,0 @@ void HAL_setupAdcs(HAL_Handle handle)
+-  // Duplicate conversion due to ADC Initial Conversion bug (SPRZ342)
+@@ -974,2 +1001,5 @@ void HAL_setupAdcs(HAL_Handle handle)
+-  // EXT IA-FB
+-  ADC_setSocChanNumber(obj->adcHandle,ADC_SocNumber_8,ADC_SocChanNumber_A3);
++
++  // Sensor on ADCINB6 (e.g. potentiometer).
++  // Note: this is affected by ADC Initial Conversion bug (SPRZ342) which leads
++  // to an error of typically <= 0.002
++  ADC_setSocChanNumber(obj->adcHandle,ADC_SocNumber_8,ADC_SocChanNumber_B6);
+@@ -979,2 +1009,2 @@ void HAL_setupAdcs(HAL_Handle handle)
+-  // EXT IB-FB
+-  ADC_setSocChanNumber(obj->adcHandle,ADC_SocNumber_9,ADC_SocChanNumber_B3);
++  // EXT IA-FB
++  ADC_setSocChanNumber(obj->adcHandle,ADC_SocNumber_9,ADC_SocChanNumber_A3);
+@@ -984,2 +1014,2 @@ void HAL_setupAdcs(HAL_Handle handle)
+-  // EXT IC-FB
+-  ADC_setSocChanNumber(obj->adcHandle,ADC_SocNumber_10,ADC_SocChanNumber_A4);
++  // EXT IB-FB
++  ADC_setSocChanNumber(obj->adcHandle,ADC_SocNumber_10,ADC_SocChanNumber_B3);
+@@ -989,2 +1019,2 @@ void HAL_setupAdcs(HAL_Handle handle)
+-  // ADC-Vhb1
+-  ADC_setSocChanNumber(obj->adcHandle,ADC_SocNumber_11,ADC_SocChanNumber_B7);
++  // EXT IC-FB
++  ADC_setSocChanNumber(obj->adcHandle,ADC_SocNumber_11,ADC_SocChanNumber_A4);
+@@ -994,2 +1024,2 @@ void HAL_setupAdcs(HAL_Handle handle)
+-  // ADC-Vhb2
+-  ADC_setSocChanNumber(obj->adcHandle,ADC_SocNumber_12,ADC_SocChanNumber_B4);
++  // ADC-Vhb1
++  ADC_setSocChanNumber(obj->adcHandle,ADC_SocNumber_12,ADC_SocChanNumber_B7);
+@@ -999,2 +1029,2 @@ void HAL_setupAdcs(HAL_Handle handle)
+-  // ADC-Vhb3
+-  ADC_setSocChanNumber(obj->adcHandle,ADC_SocNumber_13,ADC_SocChanNumber_A5);
++  // ADC-Vhb2
++  ADC_setSocChanNumber(obj->adcHandle,ADC_SocNumber_13,ADC_SocChanNumber_B4);
+@@ -1004,2 +1034,2 @@ void HAL_setupAdcs(HAL_Handle handle)
+-  // VDCBUS
+-  ADC_setSocChanNumber(obj->adcHandle,ADC_SocNumber_14,ADC_SocChanNumber_B5);
++  // ADC-Vhb3
++  ADC_setSocChanNumber(obj->adcHandle,ADC_SocNumber_14,ADC_SocChanNumber_A5);
+@@ -1007,0 +1038,5 @@ void HAL_setupAdcs(HAL_Handle handle)
++
++  // VDCBUS
++  ADC_setSocChanNumber(obj->adcHandle,ADC_SocNumber_15,ADC_SocChanNumber_B5);
++  ADC_setSocTrigSrc(obj->adcHandle,ADC_SocNumber_15,ADC_SocTrigSrc_EPWM4_ADCSOCA);
++  ADC_setSocSampleDelay(obj->adcHandle,ADC_SocNumber_15,ADC_SocSampleDelay_9_cycles);
+@@ -1010,0 +1046 @@ void HAL_setupAdcs(HAL_Handle handle)
++
+@@ -1187,2 +1223,4 @@ void HAL_setupGpios(HAL_Handle handle)
+-  // GPIO
+-  GPIO_setMode(obj->gpioHandle,GPIO_Number_26,GPIO_26_Mode_GeneralPurpose);
++  // GPIO -- Input for button
++  GPIO_setMode(obj->gpioHandle, GPIO_Number_26, GPIO_26_Mode_GeneralPurpose);
++  GPIO_setHigh(obj->gpioHandle, GPIO_Number_26);
++  GPIO_setDirection(obj->gpioHandle, GPIO_Number_26, GPIO_Direction_Input);
+diff --git a/sw/modules/hal/boards/boostxldrv8305_revA/f28x/f2806x/src/hal_2mtr.h b/sw/modules/hal/boards/boostxldrv8305_revA/f28x/f2806x/src/hal_2mtr.h
+index 636ea8a..9622a78 100644
+--- a/sw/modules/hal/boards/boostxldrv8305_revA/f28x/f2806x/src/hal_2mtr.h
++++ b/sw/modules/hal/boards/boostxldrv8305_revA/f28x/f2806x/src/hal_2mtr.h
+@@ -123 +123 @@ extern "C" {
+-#define HAL_turnLedOff            HAL_setGpioLow
++#define HAL_turnLedOff            HAL_setGpioHigh
+@@ -128 +128 @@ extern "C" {
+-#define HAL_turnLedOn             HAL_setGpioHigh
++#define HAL_turnLedOn             HAL_setGpioLow
+@@ -643,5 +642,0 @@ static inline void HAL_readAdcDataWithOffsets(HAL_Handle handle,HAL_Handle_mtr h
+-    value = (_iq)ADC_readResult(obj->adcHandle,ADC_ResultNumber_8);
+-    value = _IQ12mpy(value,current_sf);
+-    pAdcData->I.value[0] = value;
+-
+-    // convert current B
+@@ -650 +645 @@ static inline void HAL_readAdcDataWithOffsets(HAL_Handle handle,HAL_Handle_mtr h
+-    pAdcData->I.value[1] = value;
++    pAdcData->I.value[0] = value;
+@@ -652 +647 @@ static inline void HAL_readAdcDataWithOffsets(HAL_Handle handle,HAL_Handle_mtr h
+-    // convert current C
++    // convert current B
+@@ -655 +650 @@ static inline void HAL_readAdcDataWithOffsets(HAL_Handle handle,HAL_Handle_mtr h
+-    pAdcData->I.value[2] = value;
++    pAdcData->I.value[1] = value;
+@@ -657 +652 @@ static inline void HAL_readAdcDataWithOffsets(HAL_Handle handle,HAL_Handle_mtr h
+-    // convert voltage A
++    // convert current C
+@@ -659,2 +654,2 @@ static inline void HAL_readAdcDataWithOffsets(HAL_Handle handle,HAL_Handle_mtr h
+-    value = _IQ12mpy(value,voltage_sf);
+-    pAdcData->V.value[0] = value;
++    value = _IQ12mpy(value,current_sf);
++    pAdcData->I.value[2] = value;
+@@ -662 +657 @@ static inline void HAL_readAdcDataWithOffsets(HAL_Handle handle,HAL_Handle_mtr h
+-    // convert voltage B
++    // convert voltage A
+@@ -665 +660 @@ static inline void HAL_readAdcDataWithOffsets(HAL_Handle handle,HAL_Handle_mtr h
+-    pAdcData->V.value[1] = value;
++    pAdcData->V.value[0] = value;
+@@ -667 +662 @@ static inline void HAL_readAdcDataWithOffsets(HAL_Handle handle,HAL_Handle_mtr h
+-    // convert voltage C
++    // convert voltage B
+@@ -670 +665 @@ static inline void HAL_readAdcDataWithOffsets(HAL_Handle handle,HAL_Handle_mtr h
+-    pAdcData->V.value[2] = value;
++    pAdcData->V.value[1] = value;
+@@ -672 +667 @@ static inline void HAL_readAdcDataWithOffsets(HAL_Handle handle,HAL_Handle_mtr h
+-    // read the dcBus voltage value
++    // convert voltage C
+@@ -674,0 +670,5 @@ static inline void HAL_readAdcDataWithOffsets(HAL_Handle handle,HAL_Handle_mtr h
++    pAdcData->V.value[2] = value;
++
++    // read the dcBus voltage value
++    value = (_iq)ADC_readResult(obj->adcHandle,ADC_ResultNumber_15);
++    value = _IQ12mpy(value,voltage_sf);
+@@ -1455,0 +1456,27 @@ void HAL_setupDrvSpi(HAL_Handle_mtr handle, DRV_SPI_8305_Vars_t *Spi_8305_Vars);
++//! \brief Reads the Potentiometer
++//! \param[in] handle The hardware abstraction layer (HAL) handle
++//! \return The potentiometer value from _IQ(-1.0) to _IQ(1.0)
++static inline _iq HAL_readPotentiometerData(HAL_Handle handle)
++{
++    HAL_Obj *obj = (HAL_Obj *)handle;
++    _iq value;
++    // convert potentiometer from IQ12 to IQ24.
++    value = _IQ12toIQ((_iq)ADC_readResult(obj->adcHandle, ADC_ResultNumber_0));
++    return(value);
++} // end of HAL_readPotentiometerData() function
++
++//! \brief Reads the specified ADC result
++//! \param[in] handle The hardware abstraction layer (HAL) handle
++//! \param[in] result_num The number of the result register (corresponds to the SOC number)
++//! \return The ADC value from _IQ(-1.0) to _IQ(1.0)
++static inline _iq HAL_readAdcResult(HAL_Handle handle, ADC_ResultNumber_e result_num)
++{
++    HAL_Obj *obj = (HAL_Obj *)handle;
++    _iq value;
++
++    // convert potentiometer from IQ12 to IQ24 (or whatever is default).
++    value = _IQ12toIQ((_iq)ADC_readResult(obj->adcHandle, result_num));
++
++    return(value);
++} // end of HAL_readAdcResult() function
++
+diff --git a/sw/solutions/instaspin_foc/boards/boostxldrv8305_revA/f28x/f2806xF/projects/ccs5/proj_lab02b/.cproject b/sw/solutions/instaspin_foc/boards/boostxldrv8305_revA/f28x/f2806xF/projects/ccs5/proj_lab02b/.cproject
+index db24c03..41f3713 100644
+--- a/sw/solutions/instaspin_foc/boards/boostxldrv8305_revA/f28x/f2806xF/projects/ccs5/proj_lab02b/.cproject
++++ b/sw/solutions/instaspin_foc/boards/boostxldrv8305_revA/f28x/f2806xF/projects/ccs5/proj_lab02b/.cproject
+@@ -2,3 +2 @@
+-<?fileVersion 4.0.0?>
+-
+-<cproject storage_type_id="org.eclipse.cdt.core.XmlProjectDescriptionStorage">
++<?fileVersion 4.0.0?><cproject storage_type_id="org.eclipse.cdt.core.XmlProjectDescriptionStorage">
+@@ -8,3 +5,0 @@
+-				<macros>
+-					<stringMacro name="MW_INSTALL_DIR" type="VALUE_TEXT" value="${PROJECT_ROOT}\..\..\..\..\..\..\..\..\..\.."/>
+-				</macros>
+@@ -13 +7,0 @@
+-					<extension id="com.ti.ccstudio.binaryparser.CoffParser" point="org.eclipse.cdt.core.BinaryParser"/>
+@@ -16,0 +11 @@
++					<extension id="com.ti.ccstudio.binaryparser.CoffParser" point="org.eclipse.cdt.core.BinaryParser"/>
+@@ -44 +39 @@
+-									<listOptionValue builtIn="false" value="&quot;${PROJECT_ROOT}/../../../src&quot;"/>
++									<listOptionValue builtIn="false" value="&quot;${USER_CONFIG_DIR}&quot;"/>
+@@ -93,3 +87,0 @@
+-				<macros>
+-					<stringMacro name="MW_INSTALL_DIR" type="VALUE_TEXT" value="${PROJECT_ROOT}\..\..\..\..\..\..\..\..\..\.."/>
+-				</macros>
+@@ -98 +89,0 @@
+-					<extension id="com.ti.ccstudio.binaryparser.CoffParser" point="org.eclipse.cdt.core.BinaryParser"/>
+@@ -101,0 +93 @@
++					<extension id="com.ti.ccstudio.binaryparser.CoffParser" point="org.eclipse.cdt.core.BinaryParser"/>
+diff --git a/sw/solutions/instaspin_foc/boards/boostxldrv8305_revA/f28x/f2806xF/projects/ccs5/proj_lab02b/.project b/sw/solutions/instaspin_foc/boards/boostxldrv8305_revA/f28x/f2806xF/projects/ccs5/proj_lab02b/.project
+index b4a79cd..da06aff 100644
+--- a/sw/solutions/instaspin_foc/boards/boostxldrv8305_revA/f28x/f2806xF/projects/ccs5/proj_lab02b/.project
++++ b/sw/solutions/instaspin_foc/boards/boostxldrv8305_revA/f28x/f2806xF/projects/ccs5/proj_lab02b/.project
+@@ -264,0 +265,4 @@
++		<variable>
++			<name>USER_CONFIG_DIR</name>
++			<value>$%7BPARENT-1-MW_INSTALL_DIR%7D/user_config_f28069m_drv8305</value>
++		</variable>
+diff --git a/sw/solutions/instaspin_foc/boards/boostxldrv8305_revA/f28x/f2806xF/projects/ccs5/proj_lab02b/.settings/org.eclipse.cdt.codan.core.prefs b/sw/solutions/instaspin_foc/boards/boostxldrv8305_revA/f28x/f2806xF/projects/ccs5/proj_lab02b/.settings/org.eclipse.cdt.codan.core.prefs
+new file mode 100644
+index 0000000..f653028
+--- /dev/null
++++ b/sw/solutions/instaspin_foc/boards/boostxldrv8305_revA/f28x/f2806xF/projects/ccs5/proj_lab02b/.settings/org.eclipse.cdt.codan.core.prefs
+@@ -0,0 +1,3 @@
++eclipse.preferences.version=1
++inEditor=false
++onBuild=false
+diff --git a/sw/solutions/instaspin_foc/boards/boostxldrv8305_revA/f28x/f2806xF/projects/ccs5/proj_lab02b/.settings/org.eclipse.cdt.debug.core.prefs b/sw/solutions/instaspin_foc/boards/boostxldrv8305_revA/f28x/f2806xF/projects/ccs5/proj_lab02b/.settings/org.eclipse.cdt.debug.core.prefs
+new file mode 100644
+index 0000000..2adc7b1
+--- /dev/null
++++ b/sw/solutions/instaspin_foc/boards/boostxldrv8305_revA/f28x/f2806xF/projects/ccs5/proj_lab02b/.settings/org.eclipse.cdt.debug.core.prefs
+@@ -0,0 +1,2 @@
++eclipse.preferences.version=1
++org.eclipse.cdt.debug.core.toggleBreakpointModel=com.ti.ccstudio.debug.CCSBreakpointMarker
+diff --git a/sw/solutions/instaspin_motion/boards/boostxldrv8305_revA/f28x/f2806xM/projects/ccs5/proj_lab12a/.cproject b/sw/solutions/instaspin_motion/boards/boostxldrv8305_revA/f28x/f2806xM/projects/ccs5/proj_lab12a/.cproject
+index 3a64cd3..585a47f 100644
+--- a/sw/solutions/instaspin_motion/boards/boostxldrv8305_revA/f28x/f2806xM/projects/ccs5/proj_lab12a/.cproject
++++ b/sw/solutions/instaspin_motion/boards/boostxldrv8305_revA/f28x/f2806xM/projects/ccs5/proj_lab12a/.cproject
+@@ -2,3 +2 @@
+-<?fileVersion 4.0.0?>
+-
+-<cproject storage_type_id="org.eclipse.cdt.core.XmlProjectDescriptionStorage">
++<?fileVersion 4.0.0?><cproject storage_type_id="org.eclipse.cdt.core.XmlProjectDescriptionStorage">
+@@ -8,3 +5,0 @@
+-				<macros>
+-					<stringMacro name="MW_INSTALL_DIR" type="VALUE_TEXT" value="${PROJECT_ROOT}\..\..\..\..\..\..\..\..\..\.."/>
+-				</macros>
+@@ -13 +7,0 @@
+-					<extension id="com.ti.ccstudio.binaryparser.CoffParser" point="org.eclipse.cdt.core.BinaryParser"/>
+@@ -16,0 +11 @@
++					<extension id="com.ti.ccstudio.binaryparser.CoffParser" point="org.eclipse.cdt.core.BinaryParser"/>
+@@ -45 +40 @@
+-									<listOptionValue builtIn="false" value="&quot;${PROJECT_ROOT}/../../../src&quot;"/>
++									<listOptionValue builtIn="false" value="&quot;${USER_CONFIG_DIR}&quot;"/>
+@@ -94,3 +88,0 @@
+-				<macros>
+-					<stringMacro name="MW_INSTALL_DIR" type="VALUE_TEXT" value="${PROJECT_ROOT}\..\..\..\..\..\..\..\..\..\.."/>
+-				</macros>
+@@ -99 +90,0 @@
+-					<extension id="com.ti.ccstudio.binaryparser.CoffParser" point="org.eclipse.cdt.core.BinaryParser"/>
+@@ -102,0 +94 @@
++					<extension id="com.ti.ccstudio.binaryparser.CoffParser" point="org.eclipse.cdt.core.BinaryParser"/>
+diff --git a/sw/solutions/instaspin_motion/boards/boostxldrv8305_revA/f28x/f2806xM/projects/ccs5/proj_lab12a/.project b/sw/solutions/instaspin_motion/boards/boostxldrv8305_revA/f28x/f2806xM/projects/ccs5/proj_lab12a/.project
+index 97e3535..e2c92f7 100644
+--- a/sw/solutions/instaspin_motion/boards/boostxldrv8305_revA/f28x/f2806xM/projects/ccs5/proj_lab12a/.project
++++ b/sw/solutions/instaspin_motion/boards/boostxldrv8305_revA/f28x/f2806xM/projects/ccs5/proj_lab12a/.project
+@@ -284,0 +285,4 @@
++		<variable>
++			<name>USER_CONFIG_DIR</name>
++			<value>$%7BPARENT-1-MW_INSTALL_DIR%7D/user_config_f28069m_drv8305</value>
++		</variable>
