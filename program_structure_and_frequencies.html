@@ -1,0 +1,180 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Program Structure &amp; Frequencies &#8212; ODRI Firmware for CAN 1.0.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Motor Alignment Calibration" href="motor_alignment.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="program-structure-frequencies">
+<h1>Program Structure &amp; Frequencies<a class="headerlink" href="#program-structure-frequencies" title="Permalink to this headline">¶</a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The information of this page is intended for people who want to modifiy the
+firmware and is not needed if you only want to use it as is.</p>
+</div>
+<p>The programs that run on the microcontroller usually consist of two loops: an
+endless loop in the main() function that runs without any timing guarantees and
+a main ISR (<strong>Interrupt Service Routine</strong>) function that is triggered by an
+interrupt based on the PWM frequency. Everything that is timing critical
+(controller, position update, …) should go to the ISR, while other stuff
+should go to the main loop (update of GUI values, etc.). Please note that the
+ISR must finish in time (withing 1/f<sub>ISR</sub> seconds) to avoid that
+interrupts are missed.</p>
+<p>Since not everything in the ISR has to run at full frequency, there are
+decimators for these parts of the code. They reduce the frequency by simply
+calling the relevant code only at every n-th time the ISR is executed.</p>
+<p>The following figure illustrates the two loops and their frequencies.</p>
+<img alt="_images/program_frequency_overview.png" src="_images/program_frequency_overview.png" />
+<p>The frequencies are related on each other with an hierachical system:</p>
+<ul class="simple">
+<li><p>The base is the PWM frequency f<sub>PWM</sub></p></li>
+<li><p>ISR frequency f<sub>ISR</sub> is a fraction of f<sub>PWM</sub></p></li>
+<li><p>Remaining frequencies are fractions of f<sub>CTRL</sub></p></li>
+</ul>
+<p><strong>Note:</strong> The current programs (based on the example labs) for dual motor
+control are not implemented cleanly. The frequency of the PI controller for
+current should be decimated to f<sub>CTRL</sub> but this is not the case in the
+current implementation where f<sub>CTRL</sub> is implicitly set to f<sub>ISR</sub> (therefore f<sub>CTRL</sub> is not mentioned in the figure above). This
+is only a minor issue, though, as usually f<sub>CTRL</sub> is set to f<sub>ISR</sub> anyway.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 42%" />
+<col style="width: 31%" />
+<col style="width: 27%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"></th>
+<th class="head"><p>Single Motor</p></th>
+<th class="head"><p>Dual Motor</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>f<sub>PWM</sub></p></td>
+<td><p>45 kHz</p></td>
+<td><p>20 kHz</p></td>
+</tr>
+<tr class="row-odd"><td><p>f<sub>ISR</sub></p></td>
+<td><p>15 kHz</p></td>
+<td><p>10 kHz</p></td>
+</tr>
+<tr class="row-even"><td><p>f<sub>CTRL</sub></p></td>
+<td><p>15 kHz</p></td>
+<td><p>10 kHz*</p></td>
+</tr>
+<tr class="row-odd"><td><p>f<sub>POSCONV</sub></p></td>
+<td><p>3 kHz</p></td>
+<td><p>10 kHz</p></td>
+</tr>
+<tr class="row-even"><td><p>f<sub>SPEED</sub></p></td>
+<td><p>1 kHz</p></td>
+<td><p>1 kHz</p></td>
+</tr>
+</tbody>
+</table>
+<p>* not explicitly implemented in example projects for dual motor (see
+“Note” above).</p>
+<section id="configure-frequencies">
+<h2>Configure Frequencies<a class="headerlink" href="#configure-frequencies" title="Permalink to this headline">¶</a></h2>
+<p>The frequencies are set via “decimation factors” in the <code class="docutils literal notranslate"><span class="pre">user_jx.h</span></code> files (or
+<code class="docutils literal notranslate"><span class="pre">user_mtr_on_jx.h</span></code> for dual motor projects). See <span class="xref std std-doc">user_config:index</span> for
+details.</p>
+</section>
+<section id="program-flow">
+<h2>Program Flow<a class="headerlink" href="#program-flow" title="Permalink to this headline">¶</a></h2>
+<p>The following figure shows a simplified illustration of the program flow.</p>
+<img alt="_images/program_flow.png" src="_images/program_flow.png" />
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">ODRI Firmware for CAN</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="build_instructions.html">Build &amp; Flash</a></li>
+<li class="toctree-l1"><a class="reference internal" href="can_connection.html">Connecting via CAN</a></li>
+<li class="toctree-l1"><a class="reference internal" href="can_interface.html">CAN Protocol</a></li>
+<li class="toctree-l1"><a class="reference internal" href="led_codes.html">LED Blink Codes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="motor_alignment.html">Motor Alignment Calibration</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Program Structure &amp; Frequencies</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="motor_alignment.html" title="previous chapter">Motor Alignment Calibration</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2021, Max Planck Gesellschaft.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/program_structure_and_frequencies.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

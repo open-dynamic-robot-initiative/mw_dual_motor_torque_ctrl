@@ -11,6 +11,7 @@ ODRI Motor Board Firmware for CAN Communication
    CAN Protocol <can_interface>
    led_codes
    motor_alignment
+   program_structure_and_frequencies
 
 
 This documentation describes the mw_dual_motor_torque_ctrl_ firmware for the
