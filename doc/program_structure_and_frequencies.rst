@@ -35,8 +35,8 @@ The frequencies are related on each other with an hierachical system:
 control are not implemented cleanly. The frequency of the PI controller for
 current should be decimated to f\ :sub:`CTRL` but this is not the case in the
 current implementation where f\ :sub:`CTRL` is implicitly set to f\
-:sub:`ISR` (therefore f\ :sub:`CTRL` is not mentioned in the figure above). This
-is only a minor issue, though, as usually f\ :sub:`CTRL` is set to f\
+:sub:`ISR` (therefore f\ :sub:`CTRL` is not mentioned in the figure above).
+This is only a minor issue, though, as usually f\ :sub:`CTRL` is set to f\
 :sub:`ISR` anyway.
 
 +-------------------+--------------+------------+
