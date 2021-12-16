@@ -188,4 +188,9 @@ texinfo_documents = [
 
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {"https://docs.python.org/": None}
+intersphinx_mapping = {
+    "user_config": (
+        "https://open-dynamic-robot-initiative.github.io/user_config_f28069m_drv8305/",
+        None,
+    ),
+}
