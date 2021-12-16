@@ -60,8 +60,8 @@ Configure Frequencies
 ---------------------
 
 The frequencies are set via "decimation factors" in the ``user_jx.h`` files (or
-``user_mtr_on_jx.h`` for dual motor projects). See :doc:`user_config:index` for
-details.
+``user_mtr_on_jx.h`` for dual motor projects). See the :doc:`documentation of
+the config file repository <user_config:index>` for details.
 
 Program Flow
 ------------
