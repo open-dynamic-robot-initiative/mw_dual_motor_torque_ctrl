@@ -61,8 +61,8 @@ calling the relevant code only at every n-th time the ISR is executed.</p>
 <p><strong>Note:</strong> The current programs (based on the example labs) for dual motor
 control are not implemented cleanly. The frequency of the PI controller for
 current should be decimated to f<sub>CTRL</sub> but this is not the case in the
-current implementation where f<sub>CTRL</sub> is implicitly set to f<sub>ISR</sub> (therefore f<sub>CTRL</sub> is not mentioned in the figure above). This
-is only a minor issue, though, as usually f<sub>CTRL</sub> is set to f<sub>ISR</sub> anyway.</p>
+current implementation where f<sub>CTRL</sub> is implicitly set to f<sub>ISR</sub> (therefore f<sub>CTRL</sub> is not mentioned in the figure above).
+This is only a minor issue, though, as usually f<sub>CTRL</sub> is set to f<sub>ISR</sub> anyway.</p>
 <table class="docutils align-default">
 <colgroup>
 <col style="width: 42%" />
@@ -103,7 +103,7 @@ is only a minor issue, though, as usually f<sub>CTRL</sub> is set to f<sub>ISR<
 <section id="configure-frequencies">
 <h2>Configure Frequencies<a class="headerlink" href="#configure-frequencies" title="Permalink to this headline">¶</a></h2>
 <p>The frequencies are set via “decimation factors” in the <code class="docutils literal notranslate"><span class="pre">user_jx.h</span></code> files (or
-<code class="docutils literal notranslate"><span class="pre">user_mtr_on_jx.h</span></code> for dual motor projects). See <span class="xref std std-doc">user_config:index</span> for
+<code class="docutils literal notranslate"><span class="pre">user_mtr_on_jx.h</span></code> for dual motor projects). See <a class="reference external" href="https://open-dynamic-robot-initiative.github.io/user_config_f28069m_drv8305/index.html" title="(in ODRI Motor Board Configuration v1.0.0)"><span>Welcome to ODRI Motor Board Configuration’s documentation!</span></a> for
 details.</p>
 </section>
 <section id="program-flow">
