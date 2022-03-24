@@ -1,15 +1,28 @@
+This repository is not maintained anymore!
+==========================================
+
+The CAN firmware has been merged into [udriver_firmware](https://github.com/open-dynamic-robot-initiative/udriver_firmware)  and will be maintained there from now on.
+
+See the [documentation of udriver_firmware](https://open-dynamic-robot-initiative.github.io/udriver_firmware)
+for up-to-date installation and usage instructions.
+
+<br>
+
+----
+
+<br>
+
+
 Dual Motor Torque Control
 =========================
 
-Firmware for the [Open Robot Actuator Motor
-Boards](https://github.com/open-dynamic-robot-initiative/open_robot_actuator_hardware)
+Firmware for the [Open Robot Actuator Motor Boards](https://github.com/open-dynamic-robot-initiative/open_robot_actuator_hardware)
 using comunication via CAN.
 
 This firmware allows torque control of two motors at once using communication
 via CAN.  Use this firmware when you want to connect a TI LaunchPad evaluation
 board or a BLMC µDriver board via CAN.  If you want to communicate via Ethernet,
-using a Master Board, use [this
-firmware](https://github.com/open-dynamic-robot-initiative/udriver_firmware)
+using a Master Board, use [this firmware](https://github.com/open-dynamic-robot-initiative/udriver_firmware)
 instead.
 
 This program can be used with the Universal Dual Motor GUI.

@@ -194,3 +194,15 @@ intersphinx_mapping = {
         None,
     ),
 }
+
+# rst_prolog is added at the top of each page
+rst_prolog = """
+.. important:: **The mw_dual_motor_torque_ctrl repository is not maintained anymore!**
+
+   The CAN firmware has been integrated into the `udriver_firmware <https://github.com/open-dynamic-robot-initiative/udriver_firmware>`_
+   repository and will be maintained there from now on.
+   See the `documentation of udriver_firmware <https://open-dynamic-robot-initiative.github.io/udriver_firmware>`_
+   for up-to-date installation and usage instructions.
+
+"""
+
