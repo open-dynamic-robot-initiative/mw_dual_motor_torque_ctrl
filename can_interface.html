@@ -34,7 +34,15 @@
 
           <div class="body" role="main">
             
-  <section id="can-communication-protocol">
+  <div class="admonition important">
+<p class="admonition-title">Important</p>
+<p><strong>The mw_dual_motor_torque_ctrl repository is not maintained anymore!</strong></p>
+<p>The CAN firmware has been integrated into the <a class="reference external" href="https://github.com/open-dynamic-robot-initiative/udriver_firmware">udriver_firmware</a>
+repository and will be maintained there from now on.
+See the <a class="reference external" href="https://open-dynamic-robot-initiative.github.io/udriver_firmware">documentation of udriver_firmware</a>
+for up-to-date installation and usage instructions.</p>
+</div>
+<section id="can-communication-protocol">
 <h1>CAN Communication Protocol<a class="headerlink" href="#can-communication-protocol" title="Permalink to this headline">¶</a></h1>
 <p>Each frame has an 11-bit identifier, which is used to distinguish different
 types of messages. In the following the protocol (which identifier is used for
@@ -503,7 +511,7 @@ current=0 command and enable motor commands.</p>
       &copy;2021, Max Planck Gesellschaft.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.3.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.4.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
